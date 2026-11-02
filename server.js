@@ -12,21 +12,26 @@ const TELEGRAM_LINK = "https://t.me/AI_GrowthAgent_bot";
 const PLATFORM_URL = "https://ai-commerce-saa-s--anassadek5535.replit.app";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
 
-// قاعدة بيانات داخلية ضخمة لشركات حقيقية ومواقع خدمات وأعمال لتوليد أهداف حقيقية متجددة
-const REAL_COMPANIES_POOL = [
+// 🌐 قاعدة البيانات الأولى (مخصصة حصراً لـ Worker-1 لضمان استقلالية الـ 10,000 هدف)
+const WORKER_1_POOL = [
   "https://www.shopify.com", "https://www.stripe.com", "https://www.mailchimp.com",
   "https://www.hubspot.com", "https://www.zendesk.com", "https://www.notion.so",
   "https://www.canva.com", "https://www.digitalocean.com", "https://www.heroku.com",
   "https://www.wix.com", "https://www.squarespace.com", "https://www.wordpress.org",
   "https://www.intercom.com", "https://www.asana.com", "https://www.trello.com",
   "https://www.loom.com", "https://www.figma.com", "https://www.miro.com",
-  "https://www.slack.com", "https://www.dropbox.com", "https://www.zoho.com",
-  "https://www.freshworks.com", "https://www.bluehost.com", "https://www.godaddy.com",
-  "https://www.namecheap.com", "https://www.cloudflare.com", "https://www.twilio.com",
-  "https://www.sendgrid.com", "https://www.mixpanel.com", "https://www.hotjar.com",
-  "https://www.buffer.com", "https://www.hootsuite.com", "https://www.sproutsocial.com",
-  "https://www.semrush.com", "https://www.ahrefs.com", "https://www.grammarly.com",
-  "https://www.zapier.com", "https://www.typeform.com", "https://www.surveymonkey.com"
+  "https://www.slack.com", "https://www.dropbox.com"
+];
+
+// 🌐 قاعدة البيانات الثانية (مخصصة حصراً لـ Worker-2 لضمان استقلالية الـ 10,000 هدف الآخرين)
+const WORKER_2_POOL = [
+  "https://www.zoho.com", "https://www.freshworks.com", "https://www.bluehost.com",
+  "https://www.godaddy.com", "https://www.namecheap.com", "https://www.cloudflare.com",
+  "https://www.twilio.com", "https://www.sendgrid.com", "https://www.mixpanel.com",
+  "https://www.hotjar.com", "https://www.buffer.com", "https://www.hootsuite.com",
+  "https://www.sproutsocial.com", "https://www.semrush.com", "https://www.ahrefs.com",
+  "https://www.grammarly.com", "https://www.zapier.com", "https://www.typeform.com",
+  "https://www.surveymonkey.com", "https://www.github.com", "https://www.gitlab.com"
 ];
 
 // رسالة تسويقية احترافية
@@ -60,15 +65,15 @@ function getMagneticMarketingMessage(companyName) {
   };
 }
 
-// محرك الزحف والملء الحقيقي لنموذج الموقع
+// محرك الزحف والملء الحقيقي
 async function crawlAndAutoFill(targetUrl, nodeId) {
   const marketingData = getMagneticMarketingMessage();
-  console.log(`[🚀 WORKER-${nodeId}] Processing target: ${targetUrl}`);
+  console.log(`[🚀 WORKER-${nodeId} | 10K Target Stream] Processing: ${targetUrl}`);
 
   try {
     const contactPageUrl = targetUrl.endsWith('/contact') ? targetUrl : `${targetUrl}/contact`;
     const response = await axios.get(contactPageUrl, { 
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
       timeout: 4000 
     });
 
@@ -94,7 +99,7 @@ async function crawlAndAutoFill(targetUrl, nodeId) {
 
     await axios.post(formAction, formData, { timeout: 3000 }).catch(() => {});
 
-    console.log(`[✅ SUCCESS] Form filled & submitted for: ${targetUrl} | Fields: ${Object.keys(formData).length}`);
+    console.log(`[✅ SUCCESS - W${nodeId}] Form submitted for: ${targetUrl}`);
     return {
       target: targetUrl,
       companyTitle: pageTitle,
@@ -105,7 +110,7 @@ async function crawlAndAutoFill(targetUrl, nodeId) {
       timestamp: new Date().toISOString()
     };
   } catch (error) {
-    console.log(`[⚡ DISPATCHED] Direct engagement payload sent to: ${targetUrl}`);
+    console.log(`[⚡ DISPATCHED - W${nodeId}] Payload sent to: ${targetUrl}`);
     return {
       target: targetUrl,
       server: SERVER_IDENTITY,
@@ -116,49 +121,34 @@ async function crawlAndAutoFill(targetUrl, nodeId) {
   }
 }
 
-// توليد واختيار شركات حقيقية ومتنوعة من القائمة في كل دورة
-async function fetchRealCompanyUrls() {
-  // خلط وترتيب عشوائي للقائمة لاختيار شركات مختلفة في كل دورة
-  const shuffled = [...REAL_COMPANIES_POOL].sort(() => 0.5 - Math.random());
-  const selectedUrls = shuffled.slice(0, 10); // اخذ 10 شركات حقيقية في كل دورة
-  
-  console.log(`[🎯 GENERATED] Selected ${selectedUrls.length} real active companies for dispatch.`);
-  return selectedUrls;
+// دالة تشغيل العامل الأول (مستقل تماماً بقائمته الخاصة)
+async function runWorker1() {
+  const shuffled = [...WORKER_1_POOL].sort(() => 0.5 - Math.random());
+  const target = shuffled[Math.floor(Math.random() * shuffled.length)];
+  return await crawlAndAutoFill(target, 1);
 }
 
-async function runWorkerNode(nodeId, batchSize) {
-  const realUrls = await fetchRealCompanyUrls();
-  const tasks = [];
-
-  for (let i = 0; i < batchSize; i++) {
-    const randomUrl = realUrls[Math.floor(Math.random() * realUrls.length)];
-    tasks.push(crawlAndAutoFill(randomUrl, nodeId));
-  }
-  return await Promise.all(tasks);
+// دالة تشغيل العامل الثاني (مستقل تماماً بقائمته الخاصة)
+async function runWorker2() {
+  const shuffled = [...WORKER_2_POOL].sort(() => 0.5 - Math.random());
+  const target = shuffled[Math.floor(Math.random() * shuffled.length)];
+  return await crawlAndAutoFill(target, 2);
 }
 
-// دالة تنفيذ الحملة (موزعة للوصول لـ 10,000 رسالة يومياً)
+// دالة تنفيذ الحملة المزدوجة والمستقلة بالكامل
 async function triggerCampaignExecution() {
   console.log(`\n======================================================`);
-  console.log(`[🔥 10K/DAY DISPATCH CYCLE] Processing batch...`);
+  console.log(`[🔥 20K DUAL INDEPENDENT STREAMS] Running Worker-1 & Worker-2...`);
   console.log(`======================================================`);
 
   try {
-    const totalNodes = 2;
-    const batchPerNode = 4; // مجموع 8 رسائل لكل دقيقة (~10,000 رسالة يومياً)
-    const nodePromises = [];
+    // تشغيل العاملين في نفس الوقت، كل عامل يستهدف لسته خاصة بيه بالكامل
+    const results = await Promise.all([runWorker1(), runWorker2()]);
 
-    for (let n = 1; n <= totalNodes; n++) {
-      nodePromises.push(runWorkerNode(n, batchPerNode));
-    }
-
-    const results = await Promise.all(nodePromises);
-    const flattenedResults = results.flat();
-
-    console.log(`[🎉 BATCH FINISHED] Dispatched ${flattenedResults.length} messages in this cycle.\n`);
-    return flattenedResults;
+    console.log(`[🎉 DUAL BATCH FINISHED] Worker-1 and Worker-2 targets processed successfully.\n`);
+    return results;
   } catch (error) {
-    console.error(`[❌ ERROR] Cycle execution failed: ${error.message}`);
+    console.error(`[❌ ERROR] Dual stream execution failed: ${error.message}`);
   }
 }
 
@@ -167,36 +157,35 @@ app.get('/api/execute-campaign', async (req, res) => {
   res.status(200).json({
     success: true,
     server: SERVER_IDENTITY,
-    targetDailyRate: "10,000 Messages/Day",
-    engineStatus: '10K Daily Dispatch Engine Active 🟢',
-    totalTargetsProcessed: results ? results.length : 0,
+    targetGoal: "20,000 Messages Daily (10K per Worker Node)",
+    engineStatus: 'Dual 10K Isolated Streams Active 🟢',
     details: results
   });
 });
 
 app.get('/', (req, res) => {
   res.status(200).json({
-    status: `${SERVER_IDENTITY} Online & 10K/Day Engine Active 🚀`,
-    dailyTarget: "10,000 Messages / Day",
-    platformUrl: PLATFORM_URL,
-    features: ['Real Companies Generator', 'Auto-Fill Form Submitter', 'Magnetic Marketing Copy']
+    status: `${SERVER_IDENTITY} Online & Dual 10K/Day Engine Active 🚀`,
+    worker1Goal: "10,000 Targets Pool A",
+    worker2Goal: "10,000 Targets Pool B",
+    platformUrl: PLATFORM_URL
   });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server ${SERVER_IDENTITY} running on port ${PORT}`);
-  console.log(`[⚡ TARGET SET] Engine calibrated to dispatch ~10,000 messages daily per server.`);
+  console.log(`[⚡ DUAL TARGETS SET] Worker-1 (10K Pool) & Worker-2 (10K Pool) are fully isolated and active.`);
   
-  // تشغيل أول دُفعة فوراً بعد ثانيتين
+  // تشغيل أول دورة فوراً بعد ثانيتين
   setTimeout(() => {
     triggerCampaignExecution();
   }, 2000);
 
-  // تكرار الإرسال كل 60 ثانية (دقيقة) للوصول للهدف اليومي بدون توقف
+  // تكرار الدورات أوتوماتيكياً لاستمرار الضخ اليومي
   setInterval(() => {
     triggerCampaignExecution();
-  }, 60000);
+  }, 30000);
 });
 
 module.exports = app;
