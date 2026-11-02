@@ -12,6 +12,23 @@ const TELEGRAM_LINK = "https://t.me/AI_GrowthAgent_bot";
 const PLATFORM_URL = "https://ai-commerce-saa-s--anassadek5535.replit.app";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
 
+// قاعدة بيانات داخلية ضخمة لشركات حقيقية ومواقع خدمات وأعمال لتوليد أهداف حقيقية متجددة
+const REAL_COMPANIES_POOL = [
+  "https://www.shopify.com", "https://www.stripe.com", "https://www.mailchimp.com",
+  "https://www.hubspot.com", "https://www.zendesk.com", "https://www.notion.so",
+  "https://www.canva.com", "https://www.digitalocean.com", "https://www.heroku.com",
+  "https://www.wix.com", "https://www.squarespace.com", "https://www.wordpress.org",
+  "https://www.intercom.com", "https://www.asana.com", "https://www.trello.com",
+  "https://www.loom.com", "https://www.figma.com", "https://www.miro.com",
+  "https://www.slack.com", "https://www.dropbox.com", "https://www.zoho.com",
+  "https://www.freshworks.com", "https://www.bluehost.com", "https://www.godaddy.com",
+  "https://www.namecheap.com", "https://www.cloudflare.com", "https://www.twilio.com",
+  "https://www.sendgrid.com", "https://www.mixpanel.com", "https://www.hotjar.com",
+  "https://www.buffer.com", "https://www.hootsuite.com", "https://www.sproutsocial.com",
+  "https://www.semrush.com", "https://www.ahrefs.com", "https://www.grammarly.com",
+  "https://www.zapier.com", "https://www.typeform.com", "https://www.surveymonkey.com"
+];
+
 // رسالة تسويقية احترافية
 function getMagneticMarketingMessage(companyName) {
   return {
@@ -99,54 +116,14 @@ async function crawlAndAutoFill(targetUrl, nodeId) {
   }
 }
 
-// بحث حقيقي ومتنوع لجلب شركات حقيقية عبر محرك البحث
+// توليد واختيار شركات حقيقية ومتنوعة من القائمة في كل دورة
 async function fetchRealCompanyUrls() {
-  const searchQueries = [
-    "site:.com digital agency contact",
-    "site:.net software company contact us",
-    "site:.org solutions business contact",
-    "site:.com ecommerce services contact",
-    "site:.co.uk tech startup contact",
-    "site:.io cloud services contact us",
-    "site:.biz marketing agency contact"
-  ];
+  // خلط وترتيب عشوائي للقائمة لاختيار شركات مختلفة في كل دورة
+  const shuffled = [...REAL_COMPANIES_POOL].sort(() => 0.5 - Math.random());
+  const selectedUrls = shuffled.slice(0, 10); // اخذ 10 شركات حقيقية في كل دورة
   
-  const randomQuery = searchQueries[Math.floor(Math.random() * searchQueries.length)];
-  const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(randomQuery)}`;
-  
-  console.log(`[🔍 LIVE SEARCH] Querying: "${randomQuery}"...`);
-
-  try {
-    const response = await axios.get(searchUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-      timeout: 5000
-    });
-
-    const $ = cheerio.load(response.data);
-    const urls = [];
-
-    $('.result__url').each((i, el) => {
-      let link = $(el).text().trim();
-      if (link && !link.includes('duckduckgo') && !link.includes('microsoft') && !link.includes('bing')) {
-        if (!link.startsWith('http')) link = 'https://' + link;
-        urls.push(link);
-      }
-    });
-
-    const uniqueUrls = [...new Set(urls)];
-    console.log(`[🎯 FOUND] Extracted ${uniqueUrls.length} real targets.`);
-    
-    return uniqueUrls.length > 0 ? uniqueUrls : [
-      "https://httpbin.org/post",
-      "https://example.com"
-    ];
-  } catch (error) {
-    console.log(`[⚠️ SEARCH WARNING] Direct fallback activated.`);
-    return [
-      "https://httpbin.org/post",
-      "https://example.com"
-    ];
-  }
+  console.log(`[🎯 GENERATED] Selected ${selectedUrls.length} real active companies for dispatch.`);
+  return selectedUrls;
 }
 
 async function runWorkerNode(nodeId, batchSize) {
@@ -160,7 +137,7 @@ async function runWorkerNode(nodeId, batchSize) {
   return await Promise.all(tasks);
 }
 
-// دالة تنفيذ الحملة (موزعة لعمل 10,000 رسالة/يومياً)
+// دالة تنفيذ الحملة (موزعة للوصول لـ 10,000 رسالة يومياً)
 async function triggerCampaignExecution() {
   console.log(`\n======================================================`);
   console.log(`[🔥 10K/DAY DISPATCH CYCLE] Processing batch...`);
@@ -168,7 +145,7 @@ async function triggerCampaignExecution() {
 
   try {
     const totalNodes = 2;
-    const batchPerNode = 4; // إجمالي 7-8 رسائل في الدقيقة = ~10,000 رسالة يومياً
+    const batchPerNode = 4; // مجموع 8 رسائل لكل دقيقة (~10,000 رسالة يومياً)
     const nodePromises = [];
 
     for (let n = 1; n <= totalNodes; n++) {
@@ -202,7 +179,7 @@ app.get('/', (req, res) => {
     status: `${SERVER_IDENTITY} Online & 10K/Day Engine Active 🚀`,
     dailyTarget: "10,000 Messages / Day",
     platformUrl: PLATFORM_URL,
-    features: ['High-Capacity Web Crawler', 'Auto-Fill Form Submitter', 'Magnetic Marketing Copy']
+    features: ['Real Companies Generator', 'Auto-Fill Form Submitter', 'Magnetic Marketing Copy']
   });
 });
 
@@ -216,7 +193,7 @@ app.listen(PORT, () => {
     triggerCampaignExecution();
   }, 2000);
 
-  // تكرار الإرسال كل 60 ثانية (دقيقة) للوصول لستة آلاف إلى 10 آلاف رسالة يومياً
+  // تكرار الإرسال كل 60 ثانية (دقيقة) للوصول للهدف اليومي بدون توقف
   setInterval(() => {
     triggerCampaignExecution();
   }, 60000);
