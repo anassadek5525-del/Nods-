@@ -7,12 +7,12 @@ app.use(express.json());
 
 const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Smart-Autofill-Node";
 
-// بياناتك الحقيقية والثابتة
+// بياناتك الحقيقية والثابتة (تم تحديث رابط المنصة للموقع الجديد)
 const TELEGRAM_LINK = "https://t.me/AI_GrowthAgent_bot";
-const PLATFORM_URL = "https://your-platform-domain.com";
+const PLATFORM_URL = "https://ai-commerce-saa-s--anassadek5535.replit.app";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
 
-// رسالة تسويقية احترافية، جذابة، ومقنعة للعملاء المستهدفين
+// رسالة تسويقية احترافية، جذابة، ومقنعة للعملاء المستهدفين (محدثة برابط موقعك الجديد)
 function getMagneticMarketingMessage(companyName) {
   return {
     subject: `فرصة ذهبية لمضاعفة مبيعات شركة [${companyName || 'الشريكة'}] بنجاح 300% أوتوماتيكياً`,
@@ -22,17 +22,20 @@ function getMagneticMarketingMessage(companyName) {
 
 لاحظنا تميز خدماتكم، ويسعدنا أن نقدم لكم "نظام النمو الذكي B2B" الذي يعمل أوتوماتيكياً على مدار 24/7 لجلب عملاء جدد ومستهدفين لشركتكم يومياً بدون أي تدخل بشري.
 
-🚀 **ما نقدمه لكم:**
+🚀 **ما نقدمه لكم عبر منصتنا:**
 • زحف ذكي وتحليل دقيق لآلاف العملاء المهتمين بنشاطكم التجاري.
 • أتمتة كاملة لعمليات التسويق وزيادة المبيعات والتحويلات.
-• منظومة برمجية خاصة وآمنة تماماً ومخصصة لشركتكم.
+• منظومة برمجية خاصة وآمنة تماماً ومخصصة لشركتكم عبر الرابط المعتمد: ${PLATFORM_URL}
 
 💎 **التفاصيل المالية:**
 • الاستثمار الشهري: $200 فقط / شهراً.
 • طريقة الدفع الآمنة حصراً عبر شبكة BNB Smart Chain (BEP20).
 • محفظة الدفع الرسمية: ${MY_WALLET}
 
-للبدء الفوري أو تفعيل النظام الآن، تواصل معنا مباشرة عبر بوت التليجرام الرسمي المخصص لكم:
+للبدء الفوري أو تفعيل النظام الآن من خلال منصتنا الرسمية:
+🔗 ${PLATFORM_URL}
+
+أو تواصل معنا مباشرة عبر بوت التليجرام:
 🔗 ${TELEGRAM_LINK}
 
 نتطلع بشراكة ناجحة ومثمرة معكم!
@@ -168,6 +171,7 @@ app.get('/api/execute-campaign', async (req, res) => {
 app.get('/', (req, res) => {
   res.status(200).json({
     status: `${SERVER_IDENTITY} Online & Ready 🚀`,
+    platformUrl: PLATFORM_URL,
     features: ['Auto-Fill Form Submitter', 'Magnetic Marketing Copy', 'Telegram Bot Integration']
   });
 });
