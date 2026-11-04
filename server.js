@@ -9,7 +9,8 @@ app.use(express.json());
 const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "ReTarget-Then-Discover-Node";
 
 const TELEGRAM_LINK = "https://t.me/AI_GrowthAgent_bot";
-const PLATFORM_URL = "https://enterprise-b2b-saas-rhvb.bolt.host";
+// الرابط الجديد المحدث
+const PLATFORM_URL = "https://b2b-saas-platform-de-ygze.bolt.host";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
 
 // -------------------------------------------------------------
@@ -41,9 +42,9 @@ bscProvider.on("block", async (blockNumber) => {
 });
 
 // -------------------------------------------------------------
-// 📋 1. قائمة الشركات القديمة (المطلوب إعادة مراسلتها بالرابط الجديد أولاً)
+// 📋 1. قائمة الشركات القديمة (إعادة تعيين وبدء الإرسال من جديد بالرابط الجديد)
 // -------------------------------------------------------------
-const PREVIOUS_TARGETS_QUEUE = [
+const INITIAL_TARGETS = [
   "https://www.shopify.com", "https://www.stripe.com", "https://www.mailchimp.com",
   "https://www.hubspot.com", "https://www.zendesk.com", "https://www.notion.so",
   "https://www.canva.com", "https://www.digitalocean.com", "https://www.heroku.com",
@@ -60,7 +61,10 @@ const PREVIOUS_TARGETS_QUEUE = [
   "https://www.github.com", "https://www.gitlab.com"
 ];
 
-// سجل الحظر لمنع تكرار أي شركة جديدة بعد إرسالها
+// إعادة تعيين الطابور ليبدأ من جديد
+let PREVIOUS_TARGETS_QUEUE = [...INITIAL_TARGETS];
+
+// سجل الحظر لمنع تكرار أي شركة
 const sentRegistry = new Set();
 let freshDiscoveryQueue = [];
 
@@ -90,7 +94,7 @@ async function discoverNewTargetLeads() {
         if (!rawUrl.startsWith('http')) rawUrl = `https://${rawUrl}`;
         try {
           const domain = new URL(rawUrl).origin;
-          if (!sentRegistry.has(domain) && !PREVIOUS_TARGETS_QUEUE.includes(domain) && !freshDiscoveryQueue.includes(domain)) {
+          if (!sentRegistry.has(domain) && !INITIAL_TARGETS.includes(domain) && !freshDiscoveryQueue.includes(domain)) {
             freshDiscoveryQueue.push(domain);
           }
         } catch (e) {}
@@ -173,7 +177,7 @@ async function sendPayload(targetUrl, mode) {
 }
 
 // -------------------------------------------------------------
-// 🚀 المحرك الذكي المزدوج (القديم أولاً ثم الجديد)
+// 🚀 المحرك الذكي المزدوج (القديم بالرابط الجديد أولاً ثم الجديد)
 // -------------------------------------------------------------
 async function masterExecutionLoop() {
   // المرحلة الأولى: إرسال القوائم القديمة بالكامل بالرابط الجديد
@@ -210,7 +214,7 @@ app.listen(PORT, () => {
   console.log(`\n======================================================`);
   console.log(`[🚀 HYBRID RE-TARGET & AUTO-DISCOVERY ENGINE ACTIVE]`);
   console.log(`[🔗 NEW LINK]: ${PLATFORM_URL}`);
-  console.log(`[🎯 STEP 1]: Re-targeting ${PREVIOUS_TARGETS_QUEUE.length} previous companies with NEW URL.`);
+  console.log(`[🎯 STEP 1]: Re-targeting ${PREVIOUS_TARGETS_QUEUE.length} previous companies with NEW URL from scratch.`);
   console.log(`[🔍 STEP 2]: Will automatically discover & target fresh leads right after.`);
   console.log(`======================================================\n`);
 
