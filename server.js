@@ -9,12 +9,12 @@ app.use(express.json());
 const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "ReTarget-Then-Discover-Node";
 
 const TELEGRAM_LINK = "https://t.me/AI_GrowthAgent_bot";
-// الرابط الجديد المحدث
+// الرابط الجديد المحدث للمنصة
 const PLATFORM_URL = "https://b2b-saas-platform-de-ygze.bolt.host";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
 
 // -------------------------------------------------------------
-// 🔗 BSC On-Chain Verification
+// 🔗 BSC On-Chain Verification (اشتراك بقيمة 200$ شهرياً)
 // -------------------------------------------------------------
 const bscProvider = new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org/");
 let detectedTransactions = [];
@@ -26,14 +26,18 @@ bscProvider.on("block", async (blockNumber) => {
 
     for (const tx of block.prefetchedTransactions) {
       if (tx.to && tx.to.toLowerCase() === MY_WALLET.toLowerCase()) {
-        const valInBnb = ethers.formatEther(tx.value);
-        console.log(`[🎉 ON-CHAIN PAYMENT DETECTED] Amount: ${valInBnb} BNB | Hash: ${tx.hash}`);
+        const valInBnb = parseFloat(ethers.formatEther(tx.value));
+        // حساب القيمة بالدولار بناءً على السعر الحالي للـ BNB (تقريباً 700$ للـ BNB الواحد لتغطية 200$)
+        const estimatedBnbPrice = 700; 
+        const valInUSD = valInBnb * estimatedBnbPrice;
+
+        console.log(`[🎉 ON-CHAIN PAYMENT DETECTED] Amount: ${valInBnb} BNB (~$${valInUSD.toFixed(2)}) | Hash: ${tx.hash}`);
 
         detectedTransactions.push({
           hash: tx.hash,
           from: tx.from,
           amountBNB: valInBnb,
-          amountUSD: parseFloat(valInBnb) * 600,
+          amountUSD: valInUSD,
           timestamp: new Date().toISOString()
         });
       }
@@ -61,21 +65,16 @@ const INITIAL_TARGETS = [
   "https://www.github.com", "https://www.gitlab.com"
 ];
 
-// إعادة تعيين الطابور ليبدأ من جديد
 let PREVIOUS_TARGETS_QUEUE = [...INITIAL_TARGETS];
-
-// سجل الحظر لمنع تكرار أي شركة
 const sentRegistry = new Set();
 let freshDiscoveryQueue = [];
 
-// كلمات البحث لاكتشاف الشركات الجديدة لاحقاً
 const SEARCH_KEYWORDS = [
   "b2b saas platform", "logistics software company", "fintech startup contact",
   "ecommerce solution provider", "marketing automation tools", "enterprise software vendor",
   "ai business solutions", "cloud infrastructure providers"
 ];
 
-// دالة البحث عن شركات جديدة بعد إتمام القديمة
 async function discoverNewTargetLeads() {
   const randomKeyword = SEARCH_KEYWORDS[Math.floor(Math.random() * SEARCH_KEYWORDS.length)];
   console.log(`[🔎 AUTO-DISCOVERY ACTIVE] Searching web for new unseen leads: "${randomKeyword}"...`);
@@ -106,7 +105,7 @@ async function discoverNewTargetLeads() {
 }
 
 // -------------------------------------------------------------
-// ✉️ الرسالة التسويقية بالرابط الجديد
+// ✉️ الرسالة التسويقية المحدثة ($200 USD شهرياً + الرابط الجديد)
 // -------------------------------------------------------------
 function getMagneticMarketingMessage(companyName) {
   return {
@@ -122,11 +121,11 @@ function getMagneticMarketingMessage(companyName) {
 • أدوات إدارة الملفات والتقارير التنفيذية (CSV / Excel / PDF).
 • نظام اشتراك آمن وشفاف مفعل عبر شبكة BNB Smart Chain.
 
-🌐 **الرابط الجديد المعتمد للتسجيل والتجربة المجانية:**
+🌐 **الرابط الجديد المعتمد للتسجيل والتجربة:**
 🔗 ${PLATFORM_URL}
 
-💳 **تفاصيل الاشتراك:**
-• التكلفة: $200 USD (ما يعادلها بـ BNB On-Chain).
+💳 **تفاصيل الاشتراك الشهري:**
+• التكلفة: $200 USD شهرياً (ما يعادلها بـ BNB On-Chain).
 • محفظة الدفع الرسمية: ${MY_WALLET}
 
 للتواصل المباشر عبر التليجرام:
@@ -150,8 +149,6 @@ async function sendPayload(targetUrl, mode) {
     });
 
     const $ = cheerio.load(response.data);
-    const pageTitle = $('title').text().trim() || targetUrl;
-
     let formAction = $('form').attr('action') || contactUrl;
     if (formAction && !formAction.startsWith('http')) {
       formAction = new URL(formAction, targetUrl).href;
@@ -177,17 +174,15 @@ async function sendPayload(targetUrl, mode) {
 }
 
 // -------------------------------------------------------------
-// 🚀 المحرك الذكي المزدوج (القديم بالرابط الجديد أولاً ثم الجديد)
+// 🚀 المحرك الذكي المزدوج
 // -------------------------------------------------------------
 async function masterExecutionLoop() {
-  // المرحلة الأولى: إرسال القوائم القديمة بالكامل بالرابط الجديد
   if (PREVIOUS_TARGETS_QUEUE.length > 0) {
     const target = PREVIOUS_TARGETS_QUEUE.shift();
     await sendPayload(target, "RE-TARGETING PREVIOUS");
     return;
   }
 
-  // المرحلة الثانية: البحث عن شركات جديدة بالكامل ومراسلتها
   if (freshDiscoveryQueue.length < 5) {
     await discoverNewTargetLeads();
   }
@@ -202,6 +197,7 @@ app.get('/', (req, res) => {
   res.status(200).json({
     status: `${SERVER_IDENTITY} Online 🚀`,
     platformUrl: PLATFORM_URL,
+    subscriptionPlan: "$200 USD / Month",
     remainingPreviousTargets: PREVIOUS_TARGETS_QUEUE.length,
     discoveredNewQueue: freshDiscoveryQueue.length,
     totalSent: sentRegistry.size,
@@ -214,11 +210,10 @@ app.listen(PORT, () => {
   console.log(`\n======================================================`);
   console.log(`[🚀 HYBRID RE-TARGET & AUTO-DISCOVERY ENGINE ACTIVE]`);
   console.log(`[🔗 NEW LINK]: ${PLATFORM_URL}`);
-  console.log(`[🎯 STEP 1]: Re-targeting ${PREVIOUS_TARGETS_QUEUE.length} previous companies with NEW URL from scratch.`);
-  console.log(`[🔍 STEP 2]: Will automatically discover & target fresh leads right after.`);
+  console.log(`[💳 PLAN]: $200 USD Subscription Active`);
+  console.log(`[🎯 STEP 1]: Re-targeting ${PREVIOUS_TARGETS_QUEUE.length} previous companies with NEW URL.`);
   console.log(`======================================================\n`);
 
-  // تشغيل المحرك بمعدل رسالة كل 1.2 ثانية (50 رسالة/دقيقة)
   setInterval(() => {
     masterExecutionLoop();
   }, 1200);
