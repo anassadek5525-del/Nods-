@@ -6,14 +6,13 @@ const { ethers } = require('ethers');
 const app = express();
 app.use(express.json());
 
-const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Continuous-Engine";
+const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Turbo-Beast-Engine";
 const TELEGRAM_LINK = "https://t.me/AI_GrowthAgent_bot";
 const PLATFORM_URL = "https://b2b-saas-platform-8955.bolt.host";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
 
 const sentRegistry = new Set();
 
-// قائمة ضخمة وموسعة لشركات حقيقية عالمية مع مساراتها لضمان آلاف الأهداف الجاهزة
 const BASE_COMPANIES = [
   "shopify.com", "stripe.com", "mailchimp.com", "hubspot.com", "zendesk.com", 
   "notion.so", "canva.com", "digitalocean.com", "heroku.com", "wix.com", 
@@ -22,10 +21,11 @@ const BASE_COMPANIES = [
   "wise.com", "checkout.com", "databricks.com", "snowflake.com", "mongodb.com", 
   "elastic.co", "hashicorp.com", "pagerduty.com", "slack.com", "zoom.us",
   "github.com", "gitlab.com", "twilio.com", "sendgrid.com", "cloudflare.com",
-  "asana.com", "trello.com", "intercom.com", "figma.com", "miro.com"
+  "asana.com", "trello.com", "intercom.com", "figma.com", "miro.com",
+  "openai.com", "anthropic.com", "vercel.com", "netlify.com", "supabase.com"
 ];
 
-function generateRealTargetQueue() {
+function generateTurboQueue() {
   let queue = [];
   BASE_COMPANIES.forEach(domain => {
     const full = `https://www.${domain}`;
@@ -34,11 +34,13 @@ function generateRealTargetQueue() {
     queue.push(`${full}/about`);
     queue.push(`${full}/pricing`);
     queue.push(`${full}/support`);
+    queue.push(`${full}/sales`);
+    queue.push(`${full}/enterprise`);
   });
   return queue;
 }
 
-let liveDiscoveredQueue = generateRealTargetQueue();
+let turboQueue = generateTurboQueue();
 
 const marketingData = {
   subject: `[مهم] تحديث منصة الذكاء الاصطناعي B2B المؤسسية`,
@@ -53,7 +55,7 @@ const marketingData = {
   `.trim()
 };
 
-async function sendPayloadToRealTarget(targetUrl) {
+async function turboSend(targetUrl) {
   if (sentRegistry.has(targetUrl)) return;
   sentRegistry.add(targetUrl);
 
@@ -62,58 +64,50 @@ async function sendPayloadToRealTarget(targetUrl) {
       name: marketingData.senderName,
       email: 'support@enterprise-b2b.online',
       message: marketingData.messageBody
-    }, { timeout: 1000 }).catch(() => {});
+    }, { timeout: 600 }).catch(() => {});
 
-    console.log(`[🚀 CONTINUOUS REAL SENT] -> ${targetUrl} | Unique Sent: ${sentRegistry.size}`);
+    console.log(`[🚀 TURBO BLAST SENT] -> ${targetUrl} | Total Unique Sent: ${sentRegistry.size}`);
   } catch (err) {}
 }
 
-async function continuousWorker() {
+// ⚡ عمال بلا راحة (Infinite Turbo Workers)
+async function startTurboWorker(workerId) {
   while (true) {
     try {
-      if (liveDiscoveredQueue.length === 0) {
-        // إعادة تدوير وتوليد القائمة فوراً عند نفادها لمنع التوقف نهائياً
-        liveDiscoveredQueue = generateRealTargetQueue();
-        if (sentRegistry.size > 2000) sentRegistry.clear(); // تدوير الذاكرة بأمان
+      if (turboQueue.length === 0) {
+        turboQueue = generateTurboQueue();
+        if (sentRegistry.size > 5000) sentRegistry.clear();
       }
 
-      // سحب دفعة متوازية مستمرة
-      const batchSize = 5;
-      const currentBatch = liveDiscoveredQueue.splice(0, batchSize);
+      // سحب دفعة ضخمة وإرسالها فوراً بالتوازي التام دون أي انتظار
+      const batch = turboQueue.splice(0, 15);
+      await Promise.all(batch.map(target => turboSend(target)));
 
-      await Promise.all(currentBatch.map(async (target) => {
-        if (!sentRegistry.has(target)) {
-          await sendPayloadToRealTarget(target);
-        }
-      }));
-
-      // فاصل زمني منتظم للحفاظ على التدفق بدون توقف
-      await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (e) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // استمرار فوري بدون توقف في حال حدوث أي خطأ
     }
   }
 }
 
 app.get('/', (req, res) => {
   res.status(200).json({
-    status: `${SERVER_IDENTITY} Continuous Engine Active 🚀`,
+    status: `${SERVER_IDENTITY} TURBO BEAST ACTIVE 🚀`,
     platformUrl: PLATFORM_URL,
     totalUniqueSent: sentRegistry.size,
-    remainingQueue: liveDiscoveredQueue.length
+    queueLeft: turboQueue.length
   });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`[🔥 CONTINUOUS REAL COMPANIES ENGINE ACTIVE]`);
+  console.log(`[🔥 TURBO BEAST ENGINE - NO REST / MAX SPEED ACTIVE]`);
   console.log(`[🔗 LINK]: ${PLATFORM_URL}`);
-  console.log(`[🛡️ NO STOPPING - AUTO RECYCLE]: Active`);
   console.log(`======================================================\n`);
 
-  for (let i = 0; i < 2; i++) {
-    continuousWorker();
+  // تشغيل 4 عمال بأسلوب "كربكة" لا يتوقف أبداً في الخلفية
+  for (let i = 1; i <= 4; i++) {
+    startTurboWorker(i);
   }
 });
 
