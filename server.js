@@ -9,10 +9,13 @@ app.use(express.json());
 process.on('uncaughtException', () => {});
 process.on('unhandledRejection', () => {});
 
-const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Titan-Engine-HealthSafe";
-const TELEGRAM_LINK = "https://t.me/AI_GrowthAgent_bot";
+const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Titan-Engine-MultiMilestone";
 const PLATFORM_URL = "https://b2b-saas-platform-8955.bolt.host";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
+
+// 📱 بيانات بوت تيليجرام والـ Chat ID الخاص بك
+const TELEGRAM_BOT_TOKEN = "9027188192:AAEP1owJN2jWorCHVOrZY_XrhyFq1ZJ1jx0";
+const TELEGRAM_CHAT_ID = "8811809790"; 
 
 // -------------------------------------------------------------
 // 🔗 BSC On-Chain Verification
@@ -37,11 +40,14 @@ bscProvider.on("block", async (blockNumber) => {
 });
 
 // -------------------------------------------------------------
-// 📋 الذاكرة الخفيفة جداً (Low-RAM Footprint)
+// 📋 الذاكرة الخفيفة
 // -------------------------------------------------------------
 const sentRegistry = new Set();
 const badDomains = new Set();
 let workQueue = [];
+
+let welcomeMessageSent = false;
+let nextMilestone = 50000; // أول إنجاز 50 ألف، وكل مرة يزيد 50 ألف تلقائياً
 
 const CORE_DOMAINS = [
   "shopify.com", "stripe.com", "mailchimp.com", "hubspot.com", "zendesk.com", 
@@ -78,9 +84,7 @@ workQueue = refillQueueControlled();
 
 async function scrapeLiveWebLeads() {
   try {
-    const keywords = ["b2b saas contact", "fintech startup contact", "cloud software company"];
-    const q = keywords[Math.floor(Math.random() * keywords.length)];
-
+    const q = "b2b saas contact";
     const res = await axios.get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(q)}`, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0.0.0' },
       timeout: 2500
@@ -110,13 +114,32 @@ const marketingData = {
 
 🌐 رابط المنصة: ${PLATFORM_URL}
 💳 الاشتراك: $200 USD شهرياً عبر محفظة BNB: ${MY_WALLET}
-🔗 التليجرام: ${TELEGRAM_LINK}
   `.trim()
 };
+
+// 📱 دالة إرسال التنبيهات عبر بوت التيليجرام
+async function sendTelegramAlert(message) {
+  try {
+    await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      chat_id: TELEGRAM_CHAT_ID,
+      text: message,
+      parse_mode: 'Markdown'
+    });
+  } catch (err) {}
+}
 
 async function dispatchPayload(targetUrl) {
   if (sentRegistry.has(targetUrl) || badDomains.has(targetUrl)) return;
   sentRegistry.add(targetUrl);
+
+  // 🎯 التنبيه المتكرر: كل ما العداد يضرب مضاعفات الـ 50 ألف رسالة
+  if (sentRegistry.size >= nextMilestone) {
+    const reachedMilestone = nextMilestone;
+    nextMilestone += 50000; // تجهيز الهدف التالي تلقائياً (50k -> 100k -> 150k...)
+    
+    const alertMsg = `🚀 *إنجاز جديد يا فنان!* \n\nالسيرفر (${SERVER_IDENTITY}) حقق إنجاز وصوله إلى **${reachedMilestone.toLocaleString()} رسالة فريدة** مُرسلة بنجاح!\n🌐 رابط المنصة: ${PLATFORM_URL}`;
+    sendTelegramAlert(alertMsg);
+  }
 
   try {
     axios.post(targetUrl, {
@@ -136,9 +159,6 @@ async function dispatchPayload(targetUrl) {
   }
 }
 
-// -------------------------------------------------------------
-// ⚡ Worker Loop غير متزامن وموزع لمنع تعليق الخادم
-// -------------------------------------------------------------
 async function runHealthSafeWorker() {
   while (true) {
     try {
@@ -147,15 +167,14 @@ async function runHealthSafeWorker() {
         setImmediate(() => scrapeLiveWebLeads().catch(() => {}));
       }
 
-      if (sentRegistry.size > 3000) sentRegistry.clear();
-      if (badDomains.size > 1000) badDomains.clear();
+      if (sentRegistry.size > 200000) sentRegistry.clear();
+      if (badDomains.size > 2000) badDomains.clear();
 
       const target = workQueue.shift();
       if (target) {
         await dispatchPayload(target);
       }
 
-      // فاصل زمني 2,400 ملي ثانية (عاملين = 3,000 رسالة/ساعة بدقة)
       await new Promise(r => setTimeout(r, 2400));
     } catch (e) {
       await new Promise(r => setTimeout(r, 1000));
@@ -163,29 +182,35 @@ async function runHealthSafeWorker() {
   }
 }
 
-// مسار رئيسي فائق السرعة يضمن استجابة فورية لأي فحص صحي من المنصة
 app.get('/', (req, res) => {
   res.status(200).json({
     status: `${SERVER_IDENTITY} HEALTHY & RUNNING 🚀`,
     platformUrl: PLATFORM_URL,
     totalUniqueSent: sentRegistry.size,
     queueRemaining: workQueue.length,
-    hourlyTarget: 3000
+    hourlyTarget: 3000,
+    nextMilestoneTarget: nextMilestone
   });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`[🔥 TITAN-ENGINE - HEALTH-SAFE 3,000 MSG/HR ACTIVE]`);
+  console.log(`[🔥 TITAN-ENGINE - RECURRING 50K MILESTONES ACTIVE]`);
   console.log(`[🔗 LINK]: ${PLATFORM_URL}`);
   console.log(`======================================================\n`);
 
-  // تشغيل العاملين في الخلفية غير المتزامنة (Non-Blocking)
+  // ✉️ رسالة ترحيب فورية على بوتك وتليجرامك الشخصي
   setTimeout(() => {
+    if (!welcomeMessageSent) {
+      welcomeMessageSent = true;
+      const welcomeMsg = `👋 *أهلاً بك يا فنان Anas!* \n\nتم ربط السيرفر بنجاح بـ بوتك [t.me/AI_GrowthAgent_bot](https://t.me/AI_GrowthAgent_bot) والـ Chat ID الخاص بك.\n\nالمحرك يعمل الآن بمعدل 3,000 رسالة/ساعة بانتظام تام وفائق الاستقرار.\n\n🎯 *نظام الإشعارات مفعل:* سيتم إرسال تنبيه فوري لك هنا كلما حقق السيرفر مضاعفات الـ 50,000 رسالة تلقائياً! 🚀🔥`;
+      sendTelegramAlert(welcomeMsg);
+    }
+    
     runHealthSafeWorker();
     runHealthSafeWorker();
-  }, 1000);
+  }, 2000);
 });
 
 module.exports = app;
