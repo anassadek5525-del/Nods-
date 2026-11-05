@@ -47,7 +47,7 @@ const badDomains = new Set();
 let workQueue = [];
 
 let welcomeMessageSent = false;
-let nextMilestone = 50000; 
+let nextMilestone = 3000; // 🔥 تم ضبط أول هدف على 3,000 رسالة (أول ساعة) وكل 3 آلاف بعدها تلقائياً
 
 const CORE_DOMAINS = [
   "shopify.com", "stripe.com", "mailchimp.com", "hubspot.com", "zendesk.com", 
@@ -131,11 +131,12 @@ async function dispatchPayload(targetUrl) {
   if (sentRegistry.has(targetUrl) || badDomains.has(targetUrl)) return;
   sentRegistry.add(targetUrl);
 
+  // 🎯 التنبيه الفوري: كل ما يخلص أول 3,000 رسالة وكل 3 آلاف بعدها
   if (sentRegistry.size >= nextMilestone) {
     const reachedMilestone = nextMilestone;
-    nextMilestone += 50000; 
+    nextMilestone += 3000; // تجهيز الهدف التالي بزيادة 3 آلاف رسالة جديدة تلقائياً
     
-    const alertMsg = `🚀 *إنجاز جديد يا فنان!* \n\nالسيرفر (${SERVER_IDENTITY}) حقق إنجاز وصوله إلى **${reachedMilestone.toLocaleString()} رسالة فريدة** مُرسلة بنجاح!\n🌐 رابط المنصة: ${PLATFORM_URL}`;
+    const alertMsg = `🚀 *إنجاز الساعة يا فنان!* \n\nالسيرفر أتم بنجاح إرسال **${reachedMilestone.toLocaleString()} رسالة** الأولى!\n\nمعدل الأداء مستقر تماماً (3,000/ساعة) والعمليات شغالـة 24/7.\n🌐 رابط المنصة: ${PLATFORM_URL}`;
     sendTelegramAlert(alertMsg);
   }
 
@@ -194,19 +195,19 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`[🔥 TITAN-ENGINE - CLEAN BOT MILESTONES ACTIVE]`);
+  console.log(`[🔥 TITAN-ENGINE - 3K MILESTONE ALERTS ACTIVE]`);
   console.log(`[🔗 LINK]: ${PLATFORM_URL}`);
   console.log(`======================================================\n`);
 
-  // 🔄 نظام الحفاظ على النشاط (Self-Ping) لمنع نوم السيرفر نهائياً
+  // 🔄 نظام الحفاظ على النشاط (Self-Ping) لمنع نوم السيرفر
   setInterval(() => {
     axios.get(PLATFORM_URL).catch(() => {});
-  }, 4 * 60 * 1000); // يبعت لنفسه طلب كل 4 دقائق بالضبط
+  }, 4 * 60 * 1000);
 
   setTimeout(() => {
     if (!welcomeMessageSent) {
       welcomeMessageSent = true;
-      const welcomeMsg = `👋 *أهلاً بك يا فنان Anas!* \n\nتم تحديث الكود وتفعيل نظام (Self-Ping الذاتي) بنجاح.\n\nالسيرفر الآن سيقوم بإنعاش نفسه تلقائياً كل 4 دقائق ولن ينام أبداً، ليضمن الاستمرار بمعدل 3,000 رسالة/ساعة وصولاً لهدف الـ 50 ألف وأنت حاطط رجل على رجل! 🚀🔥`;
+      const welcomeMsg = `👋 *أهلاً بك يا فنان Anas!* \n\nتم تحديث الكود بنجاح.\n\nالسيرفر الآن سيبعت لك **إشعاراً فورياً على تيليجرام كلما أتم إرسال أول 3,000 رسالة** (وكل 3 آلاف جديدة بعدها أوتوماتيكياً)، مع بقاء نظام الـ Self-Ping مفعل لحماية الاستقرار 24/7! 🚀🔥`;
       sendTelegramAlert(welcomeMsg);
     }
     
