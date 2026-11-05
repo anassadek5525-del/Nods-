@@ -9,12 +9,12 @@ app.use(express.json());
 process.on('uncaughtException', () => {});
 process.on('unhandledRejection', () => {});
 
-const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Titan-Engine-MultiMilestone";
+const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Titan-Engine-CleanBot-Active";
 const PLATFORM_URL = "https://b2b-saas-platform-8955.bolt.host";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
 
-// 📱 بيانات بوت تيليجرام والـ Chat ID الخاص بك
-const TELEGRAM_BOT_TOKEN = "9027188192:AAEP1owJN2jWorCHVOrZY_XrhyFq1ZJ1jx0";
+// 📱 بيانات بوت تيليجرام الجديد والـ Chat ID الخاص بك
+const TELEGRAM_BOT_TOKEN = "9085667036:AAHjWViGOv227Pac38vlWZuvEFpATuqn84c";
 const TELEGRAM_CHAT_ID = "8811809790"; 
 
 // -------------------------------------------------------------
@@ -196,15 +196,15 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`[🔥 TITAN-ENGINE - RECURRING 50K MILESTONES ACTIVE]`);
+  console.log(`[🔥 TITAN-ENGINE - CLEAN BOT MILESTONES ACTIVE]`);
   console.log(`[🔗 LINK]: ${PLATFORM_URL}`);
   console.log(`======================================================\n`);
 
-  // ✉️ رسالة ترحيب فورية على بوتك وتليجرامك الشخصي
+  // ✉️ رسالة ترحيب فورية على بوتك الجديد وتليجرامك الشخصي
   setTimeout(() => {
     if (!welcomeMessageSent) {
       welcomeMessageSent = true;
-      const welcomeMsg = `👋 *أهلاً بك يا فنان Anas!* \n\nتم ربط السيرفر بنجاح بـ بوتك [t.me/AI_GrowthAgent_bot](https://t.me/AI_GrowthAgent_bot) والـ Chat ID الخاص بك.\n\nالمحرك يعمل الآن بمعدل 3,000 رسالة/ساعة بانتظام تام وفائق الاستقرار.\n\n🎯 *نظام الإشعارات مفعل:* سيتم إرسال تنبيه فوري لك هنا كلما حقق السيرفر مضاعفات الـ 50,000 رسالة تلقائياً! 🚀🔥`;
+      const welcomeMsg = `👋 *أهلاً بك يا فنان Anas!* \n\nتم ربط السيرفر بنجاح بـ بوتك الجديد [t.me/TitanEngineAlerts_bot](https://t.me/TitanEngineAlerts_bot).\n\nالمحرك يعمل الآن بمعدل 3,000 رسالة/ساعة بانتظام تام وبدون أي قيود أو قنوات مزعجة.\n\n🎯 *نظام الإشعارات مفعل:* سيتم إرسال تنبيه فوري لك هنا كلما حقق السيرفر مضاعفات الـ 50,000 رسالة تلقائياً! 🚀🔥`;
       sendTelegramAlert(welcomeMsg);
     }
     
