@@ -6,16 +6,10 @@ const { ethers } = require('ethers');
 const app = express();
 app.use(express.json());
 
-// 🛡️ حماية شاملة ضد أي كراش أو خطأ مفاجئ على مستوى السيرفر
-process.on('uncaughtException', (err) => {
-  console.error('[⚠️ SYSTEM WARNING - UNCAUGHT EXCEPTION]:', err.message);
-});
+process.on('uncaughtException', () => {});
+process.on('unhandledRejection', () => {});
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('[⚠️ SYSTEM WARNING - UNHANDLED REJECTION]:', reason);
-});
-
-const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Omni-Source-Engine-v9";
+const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Titan-Engine-RateLimited";
 const TELEGRAM_LINK = "https://t.me/AI_GrowthAgent_bot";
 const PLATFORM_URL = "https://b2b-saas-platform-8955.bolt.host";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
@@ -43,23 +37,13 @@ bscProvider.on("block", async (blockNumber) => {
 });
 
 // -------------------------------------------------------------
-// 📋 الذاكرة الذكية وطابور المهام متعدد المصادر
+// 📋 إدارة الذاكرة الخفيفة (Low-RAM Footprint)
 // -------------------------------------------------------------
 const sentRegistry = new Set();
 const badDomains = new Set();
 let workQueue = [];
 
-const SEARCH_VECTORS = [
-  "top b2b saas companies contact", "global software development agency",
-  "cloud infrastructure providers", "fintech startup solution contact",
-  "enterprise marketing software", "ai automation tech company",
-  "cybersecurity enterprise solutions", "devops tools official partner",
-  "data analytics platform contact", "payment gateway provider support",
-  "hr tech software startup", "erp software provider official",
-  "logistics platform contact page", "edtech enterprise solutions"
-];
-
-const MASTER_COMPANIES = [
+const CORE_DOMAINS = [
   "shopify.com", "stripe.com", "mailchimp.com", "hubspot.com", "zendesk.com", 
   "notion.so", "canva.com", "digitalocean.com", "heroku.com", "wix.com", 
   "squarespace.com", "salesforce.com", "adobe.com", "atlassian.com", "tableau.com", 
@@ -70,72 +54,51 @@ const MASTER_COMPANIES = [
   "openai.com", "anthropic.com", "vercel.com", "netlify.com", "supabase.com"
 ];
 
-function seedCoreQueue() {
+const PREFIXES = ["get", "use", "try", "go", "app", "cloud", "tech", "dev", "ai", "data"];
+const SUFFIXES = ["io", "co", "ai", "tech", "app", "cloud", "dev", "labs", "hq", "net"];
+
+// توليد خفيف ومحدد لحماية الـ RAM
+function refillQueueControlled() {
   let list = [];
-  MASTER_COMPANIES.forEach(d => {
+  CORE_DOMAINS.forEach(d => {
     const root = `https://www.${d}`;
-    list.push(root, `${root}/contact`, `${root}/about`, `${root}/pricing`, `${root}/sales`, `${root}/support`);
+    list.push(root, `${root}/contact`);
   });
-  
-  // توليد أهداف إضافية ضخمة لضمان الامتلاء الدائم
-  for (let i = 1; i <= 600; i++) {
-    list.push(`https://www.enterprise-global-solution-${i}.com/contact`);
-    list.push(`https://www.cloud-saas-platform-${i}.io/support`);
-  }
+
+  PREFIXES.forEach(p => {
+    SUFFIXES.forEach(s => {
+      const domain = `https://www.${p}${s}.com`;
+      list.push(domain, `${domain}/contact`);
+    });
+  });
+
   return list;
 }
 
-workQueue = seedCoreQueue();
+workQueue = refillQueueControlled();
 
-// -------------------------------------------------------------
-// 🌐 المصدر الأول: البحث الحي من محركات بحث متعددة
-// -------------------------------------------------------------
-async function fetchFromSearchEngines() {
-  const query = SEARCH_VECTORS[Math.floor(Math.random() * SEARCH_VECTORS.length)];
+async function scrapeLiveWebLeads() {
   try {
-    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-    const res = await axios.get(searchUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/125.0.0.0' },
-      timeout: 3000
+    const keywords = ["b2b saas contact", "fintech startup contact", "cloud software company"];
+    const q = keywords[Math.floor(Math.random() * keywords.length)];
+
+    const res = await axios.get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(q)}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0.0.0' },
+      timeout: 2500
     });
 
     const $ = cheerio.load(res.data);
-    let count = 0;
     $('.result__url').each((_, el) => {
       const href = $(el).attr('href');
       if (href) {
         try {
           const origin = new URL(href).origin;
-          if (!origin.includes('duckduckgo') && !origin.includes('wikipedia') && !sentRegistry.has(origin) && !badDomains.has(origin)) {
-            workQueue.push(origin, `${origin}/contact`, `${origin}/support`);
-            count++;
+          if (!origin.includes('duckduckgo') && !sentRegistry.has(origin) && !badDomains.has(origin)) {
+            workQueue.push(origin, `${origin}/contact`);
           }
         } catch (e) {}
       }
     });
-    if (count > 0) console.log(`[🔎 MULTI-SOURCE SEARCH] Added ${count} targets from: "${query}"`);
-  } catch (e) {}
-}
-
-// -------------------------------------------------------------
-// 🌐 المصدر الثاني: جلب روابط من مستودعات تقنية عامة (Open Directories)
-// -------------------------------------------------------------
-async function fetchFromOpenDirectories() {
-  try {
-    // جلب قائمة عشوائية من شركات التكنولوجيا من قوائم عامة جاهزة
-    const res = await axios.get('https://raw.githubusercontent.com/fivedollar/fivedollar-saas-ideas/master/README.md', { timeout: 3000 });
-    const matches = res.data.match(/https?:\/\/[^\s)]+/g) || [];
-    let added = 0;
-    matches.forEach(url => {
-      try {
-        const origin = new URL(url).origin;
-        if (!sentRegistry.has(origin) && !badDomains.has(origin) && added < 30) {
-          workQueue.push(origin, `${origin}/contact`);
-          added++;
-        }
-      } catch (e) {}
-    });
-    if (added > 0) console.log(`[📂 OPEN DIRECTORY] Pulled ${added} active tech domains.`);
   } catch (e) {}
 }
 
@@ -152,81 +115,76 @@ const marketingData = {
   `.trim()
 };
 
-// -------------------------------------------------------------
-// ✉️ إرسال البيانات بسرعة فائقة ومعالجة الأخطاء
-// -------------------------------------------------------------
 async function dispatchPayload(targetUrl) {
   if (sentRegistry.has(targetUrl) || badDomains.has(targetUrl)) return;
   sentRegistry.add(targetUrl);
 
   try {
-    await axios.post(targetUrl, {
+    axios.post(targetUrl, {
       name: marketingData.senderName,
       email: 'support@enterprise-b2b.online',
       message: marketingData.messageBody
     }, {
-      headers: { 'User-Agent': 'Mozilla/5.0 Chrome/124.0.0.0', 'Content-Type': 'application/json' },
-      timeout: 1000
-    });
+      headers: { 'User-Agent': 'Mozilla/5.0 Chrome/125.0.0.0', 'Content-Type': 'application/json' },
+      timeout: 1500
+    }).catch(() => {});
 
-    console.log(`[🚀 OMNI-SOURCE SENT] -> ${targetUrl} | Total Unique Sent: ${sentRegistry.size}`);
+    if (sentRegistry.size % 50 === 0) {
+      console.log(`[🚀 RATE-CONTROLLED SENT] -> Total Sent: ${sentRegistry.size} | Target Rate: 3,000/hr`);
+    }
   } catch (err) {
     badDomains.add(targetUrl);
-    if (badDomains.size > 8000) badDomains.clear();
   }
 }
 
 // -------------------------------------------------------------
-// ⚡ العمال الأقوياء (Multi-Source Workers Loop)
+// ⚡ Worker Loop محدد المعدل (3,000/الساعة بالضبط)
 // -------------------------------------------------------------
-async function runOmniWorker(workerId) {
+async function runTargetedRateWorker(workerId) {
   while (true) {
     try {
-      // لو الطابور قل عن 100 عنصر، يتم جلب البيانات من كافة المصادر بالتوازي
-      if (workQueue.length < 100) {
-        workQueue.push(...seedCoreQueue());
-        // تشغيل المصادر المختلفة في الخلفية بدون أي بلوك
-        fetchFromSearchEngines().catch(() => {});
-        fetchFromOpenDirectories().catch(() => {});
+      if (workQueue.length < 20) {
+        workQueue.push(...refillQueueControlled());
+        scrapeLiveWebLeads().catch(() => {});
       }
 
-      if (sentRegistry.size > 40000) sentRegistry.clear();
+      // تنظيف الذاكرة للحفاظ على استهلاك الـ RAM منخفضاً دائماً
+      if (sentRegistry.size > 5000) sentRegistry.clear();
+      if (badDomains.size > 2000) badDomains.clear();
 
       const target = workQueue.shift();
       if (target) {
         await dispatchPayload(target);
       }
 
-      // سرعة فائقة مستقرة لا تستهلك الـ CPU وتمنع الكراش
-      await new Promise(r => setTimeout(r, 45));
+      // فاصل زمني 2,400 ملي ثانية لكل عامل (عاملين = رسالة كل 1,200 ملي ثانية = 3,000 رسالة/ساعة)
+      await new Promise(r => setTimeout(r, 2400));
     } catch (e) {
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 1000));
     }
   }
 }
 
 app.get('/', (req, res) => {
   res.status(200).json({
-    status: `${SERVER_IDENTITY} ALL SOURCES ACTIVE 🚀`,
+    status: `${SERVER_IDENTITY} ONLINE 🚀`,
     platformUrl: PLATFORM_URL,
     totalUniqueSent: sentRegistry.size,
-    queueSize: workQueue.length,
-    blockedCount: badDomains.size
+    queueRemaining: workQueue.length,
+    hourlyTarget: 3000
   });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`[🔥 OMNI-SOURCE ENGINE v9 - ALL SOURCES & UNSTOPPABLE]`);
+  console.log(`[🔥 TITAN-ENGINE - STABLE 3,000 MSG/HR PER SERVER ACTIVE]`);
   console.log(`[🔗 LINK]: ${PLATFORM_URL}`);
   console.log(`======================================================\n`);
 
-  // تشغيل 4 عمال صواريخ يسحبون من كافة المصادر بلا توقف 24/7
-  for (let i = 1; i <= 4; i++) {
-    runOmniWorker(i).catch(err => {
-      console.log(`[⚠️ Worker ${i} Auto-Recovered]:`, err.message);
-    });
+  // تشغيل عاملين اثنين فقط لتحقيق المعدل المطلوب بدقة وبدون استهلاك للذاكرة
+  for (let i = 1; i <= 2; i++) {
+    runTargetedRateWorker(i);
   }
 });
 
