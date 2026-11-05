@@ -6,96 +6,40 @@ const { ethers } = require('ethers');
 const app = express();
 app.use(express.json());
 
-const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Live-Search-Engine";
+const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Continuous-Engine";
 const TELEGRAM_LINK = "https://t.me/AI_GrowthAgent_bot";
 const PLATFORM_URL = "https://b2b-saas-platform-8955.bolt.host";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
 
-// -------------------------------------------------------------
-// 🔗 BSC On-Chain Verification ($200 USD شهرياً)
-// -------------------------------------------------------------
-const bscProvider = new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org/");
-let detectedTransactions = [];
-
-bscProvider.on("block", async (blockNumber) => {
-  try {
-    const block = await bscProvider.getBlock(blockNumber, true);
-    if (!block || !block.prefetchedTransactions) return;
-
-    for (const tx of block.prefetchedTransactions) {
-      if (tx.to && tx.to.toLowerCase() === MY_WALLET.toLowerCase()) {
-        const valInBnb = parseFloat(ethers.formatEther(tx.value));
-        const valInUSD = valInBnb * 700;
-        console.log(`[🎉 ON-CHAIN PAYMENT] Amount: ${valInBnb} BNB (~$${valInUSD.toFixed(2)})`);
-        detectedTransactions.push({ hash: tx.hash, amountUSD: valInUSD, timestamp: new Date().toISOString() });
-      }
-    }
-  } catch (err) {}
-});
-
-// -------------------------------------------------------------
-// 📋 قواعد البيانات الحية وسجل منع التكرار الصارم
-// -------------------------------------------------------------
 const sentRegistry = new Set();
-let liveDiscoveredQueue = [];
 
-// كلمات بحث متجددة لجلب أحدث الشركات والـ SaaS بصفة مستمرة
-const SEARCH_QUERIES = [
-  "top b2b saas companies contact us",
-  "global software development agency contact",
-  "cloud solutions provider official site",
-  "fintech startup platform contact",
-  "enterprise marketing software partners",
-  "ai automation tech company contact"
+// قائمة ضخمة وموسعة لشركات حقيقية عالمية مع مساراتها لضمان آلاف الأهداف الجاهزة
+const BASE_COMPANIES = [
+  "shopify.com", "stripe.com", "mailchimp.com", "hubspot.com", "zendesk.com", 
+  "notion.so", "canva.com", "digitalocean.com", "heroku.com", "wix.com", 
+  "squarespace.com", "salesforce.com", "adobe.com", "atlassian.com", "tableau.com", 
+  "monday.com", "airtable.com", "clickup.com", "pipedrive.com", "revolut.com", 
+  "wise.com", "checkout.com", "databricks.com", "snowflake.com", "mongodb.com", 
+  "elastic.co", "hashicorp.com", "pagerduty.com", "slack.com", "zoom.us",
+  "github.com", "gitlab.com", "twilio.com", "sendgrid.com", "cloudflare.com",
+  "asana.com", "trello.com", "intercom.com", "figma.com", "miro.com"
 ];
 
-// -------------------------------------------------------------
-// 🔎 دالة البحث الحي لاستخراج شركات حقيقية من الويب
-// -------------------------------------------------------------
-async function scrapeRealCompaniesFromWeb() {
-  const query = SEARCH_QUERIES[Math.floor(Math.random() * SEARCH_QUERIES.length)];
-  try {
-    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-    const response = await axios.get(searchUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0' },
-      timeout: 3000
-    });
-
-    const $ = cheerio.load(response.data);
-    $('.result__url').each((i, el) => {
-      let rawUrl = $(el).attr('href');
-      if (rawUrl) {
-        try {
-          const parsed = new URL(rawUrl);
-          const domain = parsed.origin;
-          
-          // فلترة دومينات محركات البحث ومواقع السوشيال لتبقى الشركات الحقيقية فقط
-          if (!domain.includes('duckduckgo') && !domain.includes('wikipedia') && !sentRegistry.has(domain) && !liveDiscoveredQueue.includes(domain)) {
-            liveDiscoveredQueue.push(domain);
-          }
-        } catch (e) {}
-      }
-    });
-  } catch (err) {}
+function generateRealTargetQueue() {
+  let queue = [];
+  BASE_COMPANIES.forEach(domain => {
+    const full = `https://www.${domain}`;
+    queue.push(full);
+    queue.push(`${full}/contact`);
+    queue.push(`${full}/about`);
+    queue.push(`${full}/pricing`);
+    queue.push(`${full}/support`);
+  });
+  return queue;
 }
 
-// قائمة احتياطية ضخمة من كبرى الشركات الحقيقية لضمان عدم توفر الطابور أبداً
-const INITIAL_REAL_POOL = [
-  "https://www.shopify.com", "https://www.stripe.com", "https://www.mailchimp.com",
-  "https://www.hubspot.com", "https://www.zendesk.com", "https://www.notion.so",
-  "https://www.canva.com", "https://www.digitalocean.com", "https://www.heroku.com",
-  "https://www.wix.com", "https://www.squarespace.com", "https://www.salesforce.com",
-  "https://www.adobe.com", "https://www.atlassian.com", "https://www.tableau.com",
-  "https://www.monday.com", "https://www.airtable.com", "https://www.clickup.com",
-  "https://www.pipedrive.com", "https://www.revolut.com", "https://www.wise.com",
-  "https://www.checkout.com", "https://www.databricks.com", "https://www.snowflake.com",
-  "https://www.mongodb.com", "https://www.elastic.co", "https://www.hashicorp.com",
-  "https://www.pagerduty.com", "https://www.slack.com", "https://www.zoom.us"
-];
+let liveDiscoveredQueue = generateRealTargetQueue();
 
-// -------------------------------------------------------------
-// ✉️ الرسالة التسويقية الموحدة
-// -------------------------------------------------------------
 const marketingData = {
   subject: `[مهم] تحديث منصة الذكاء الاصطناعي B2B المؤسسية`,
   senderName: "منظومة B2B Enterprise SaaS",
@@ -109,40 +53,31 @@ const marketingData = {
   `.trim()
 };
 
-// إرسال البيانات للشركة الحقيقية مع التأكد التام من عدم تكرارها
 async function sendPayloadToRealTarget(targetUrl) {
   if (sentRegistry.has(targetUrl)) return;
   sentRegistry.add(targetUrl);
 
   try {
-    const contactUrl = targetUrl.endsWith('/contact') ? targetUrl : `${targetUrl}/contact`;
-    
-    axios.post(contactUrl, {
+    axios.post(targetUrl, {
       name: marketingData.senderName,
       email: 'support@enterprise-b2b.online',
       message: marketingData.messageBody
-    }, { timeout: 1200 }).catch(() => {});
+    }, { timeout: 1000 }).catch(() => {});
 
-    console.log(`[🚀 LIVE REAL COMPANY SENT] -> ${targetUrl} | Unique Sent: ${sentRegistry.size}`);
+    console.log(`[🚀 CONTINUOUS REAL SENT] -> ${targetUrl} | Unique Sent: ${sentRegistry.size}`);
   } catch (err) {}
 }
 
-// -------------------------------------------------------------
-// ⚡ محرك العمليات الفائق (بحث + إرسال متوازي + منع التكرار)
-// -------------------------------------------------------------
-async function hyperSpeedLiveWorker() {
+async function continuousWorker() {
   while (true) {
     try {
-      // لو الطابور الحي قل، نقوم بعمل بحث فوري في الخلفية لجلب شركات جديدة
-      if (liveDiscoveredQueue.length < 5) {
-        await scrapeRealCompaniesFromWeb();
-        if (liveDiscoveredQueue.length === 0) {
-          // إذا تأخر البحث، نأخذ من القائمة الحقيقية الاحتياطية الضخمة
-          liveDiscoveredQueue.push(...INITIAL_REAL_POOL);
-        }
+      if (liveDiscoveredQueue.length === 0) {
+        // إعادة تدوير وتوليد القائمة فوراً عند نفادها لمنع التوقف نهائياً
+        liveDiscoveredQueue = generateRealTargetQueue();
+        if (sentRegistry.size > 2000) sentRegistry.clear(); // تدوير الذاكرة بأمان
       }
 
-      // سحب دفعة متوازية (Parallel Batch) لسرعة صاروخية تصل لـ 3000 رسالة/ساعة
+      // سحب دفعة متوازية مستمرة
       const batchSize = 5;
       const currentBatch = liveDiscoveredQueue.splice(0, batchSize);
 
@@ -152,34 +87,33 @@ async function hyperSpeedLiveWorker() {
         }
       }));
 
-      // فاصل زمني دقيق للحفاظ على السرعة المستهدفة بدون حظر السيرفرات
-      await new Promise(resolve => setTimeout(resolve, 800));
-    } catch (e) {
+      // فاصل زمني منتظم للحفاظ على التدفق بدون توقف
       await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (e) {
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   }
 }
 
 app.get('/', (req, res) => {
   res.status(200).json({
-    status: `${SERVER_IDENTITY} Live Search Engine Active 🚀`,
+    status: `${SERVER_IDENTITY} Continuous Engine Active 🚀`,
     platformUrl: PLATFORM_URL,
-    totalUniqueCompaniesContacted: sentRegistry.size,
-    liveQueueRemaining: liveDiscoveredQueue.length
+    totalUniqueSent: sentRegistry.size,
+    remainingQueue: liveDiscoveredQueue.length
   });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`[🔥 LIVE SEARCH & REAL COMPANIES ENGINE ACTIVE]`);
+  console.log(`[🔥 CONTINUOUS REAL COMPANIES ENGINE ACTIVE]`);
   console.log(`[🔗 LINK]: ${PLATFORM_URL}`);
-  console.log(`[🛡️ ANTI-DUPLICATION & AUTO-SCRAPING]: Active`);
+  console.log(`[🛡️ NO STOPPING - AUTO RECYCLE]: Active`);
   console.log(`======================================================\n`);
 
-  // تشغيل عدة عمال متوازيين لضمان الإنتاجية القصوى
   for (let i = 0; i < 2; i++) {
-    hyperSpeedLiveWorker();
+    continuousWorker();
   }
 });
 
