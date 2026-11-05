@@ -9,7 +9,7 @@ app.use(express.json());
 process.on('uncaughtException', () => {});
 process.on('unhandledRejection', () => {});
 
-const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Titan-Engine-CleanBot-Active";
+const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Titan-Engine-KeepAlive-Active";
 const PLATFORM_URL = "https://b2b-saas-platform-8955.bolt.host";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
 
@@ -47,7 +47,7 @@ const badDomains = new Set();
 let workQueue = [];
 
 let welcomeMessageSent = false;
-let nextMilestone = 3000; // 🔥 تم ضبط أول هدف على 3,000 رسالة (أول ساعة) وكل 3 آلاف بعدها تلقائياً
+let nextMilestone = 3000; // أول إنجاز 3 آلاف رسالة
 
 const CORE_DOMAINS = [
   "shopify.com", "stripe.com", "mailchimp.com", "hubspot.com", "zendesk.com", 
@@ -131,12 +131,11 @@ async function dispatchPayload(targetUrl) {
   if (sentRegistry.has(targetUrl) || badDomains.has(targetUrl)) return;
   sentRegistry.add(targetUrl);
 
-  // 🎯 التنبيه الفوري: كل ما يخلص أول 3,000 رسالة وكل 3 آلاف بعدها
   if (sentRegistry.size >= nextMilestone) {
     const reachedMilestone = nextMilestone;
-    nextMilestone += 3000; // تجهيز الهدف التالي بزيادة 3 آلاف رسالة جديدة تلقائياً
+    nextMilestone += 3000; 
     
-    const alertMsg = `🚀 *إنجاز الساعة يا فنان!* \n\nالسيرفر أتم بنجاح إرسال **${reachedMilestone.toLocaleString()} رسالة** الأولى!\n\nمعدل الأداء مستقر تماماً (3,000/ساعة) والعمليات شغالـة 24/7.\n🌐 رابط المنصة: ${PLATFORM_URL}`;
+    const alertMsg = `🚀 *إنجاز الساعة يا فنان!* \n\nالسيرفر أتم بنجاح إرسال **${reachedMilestone.toLocaleString()} رسالة** الأولى!\n🌐 رابط المنصة: ${PLATFORM_URL}`;
     sendTelegramAlert(alertMsg);
   }
 
@@ -151,7 +150,7 @@ async function dispatchPayload(targetUrl) {
     }).catch(() => {});
 
     if (sentRegistry.size % 25 === 0) {
-      console.log(`[🚀 HEALTH-SAFE SENT] -> Total Sent: ${sentRegistry.size} | Rate: ~3,000/hr`);
+      console.log(`[🚀 ULTRA-ACTIVE SENT] -> Total Sent: ${sentRegistry.size} | Keep-Alive Active`);
     }
   } catch (err) {
     badDomains.add(targetUrl);
@@ -183,11 +182,10 @@ async function runHealthSafeWorker() {
 
 app.get('/', (req, res) => {
   res.status(200).json({
-    status: `${SERVER_IDENTITY} HEALTHY & RUNNING 🚀`,
+    status: `${SERVER_IDENTITY} 100% AWAKE 🚀`,
     platformUrl: PLATFORM_URL,
     totalUniqueSent: sentRegistry.size,
     queueRemaining: workQueue.length,
-    hourlyTarget: 3000,
     nextMilestoneTarget: nextMilestone
   });
 });
@@ -195,19 +193,19 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`[🔥 TITAN-ENGINE - 3K MILESTONE ALERTS ACTIVE]`);
+  console.log(`[🔥 TITAN-ENGINE - HYPER KEEP-ALIVE ACTIVE]`);
   console.log(`[🔗 LINK]: ${PLATFORM_URL}`);
   console.log(`======================================================\n`);
 
-  // 🔄 نظام الحفاظ على النشاط (Self-Ping) لمنع نوم السيرفر
+  // ⚡ نظام إنعاش فائق السرعة: يبعت إشارة لنفسه كل 30 ثانية بالضبط عشان يمنع أي توقف نهائياً
   setInterval(() => {
     axios.get(PLATFORM_URL).catch(() => {});
-  }, 4 * 60 * 1000);
+  }, 30 * 1000);
 
   setTimeout(() => {
     if (!welcomeMessageSent) {
       welcomeMessageSent = true;
-      const welcomeMsg = `👋 *أهلاً بك يا فنان Anas!* \n\nتم تحديث الكود بنجاح.\n\nالسيرفر الآن سيبعت لك **إشعاراً فورياً على تيليجرام كلما أتم إرسال أول 3,000 رسالة** (وكل 3 آلاف جديدة بعدها أوتوماتيكياً)، مع بقاء نظام الـ Self-Ping مفعل لحماية الاستقرار 24/7! 🚀🔥`;
+      const welcomeMsg = `👋 *أهلاً بك يا فنان Anas!* \n\nتم تفعيل نظام الإنعاش الفائق (**Hyper Keep-Alive**).\n\nالسيرفر الآن يرسل إشارة لنفسه كل **30 ثانية** ليبقى نشطاً 100% ويستمر بإرسال الرسائل للوصول لهدف الـ 3,000 وأنت حاطط رجل على رجل! 🚀🔥`;
       sendTelegramAlert(welcomeMsg);
     }
     
