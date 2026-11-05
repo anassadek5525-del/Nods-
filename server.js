@@ -47,7 +47,7 @@ const badDomains = new Set();
 let workQueue = [];
 
 let welcomeMessageSent = false;
-let nextMilestone = 50000; // أول إنجاز 50 ألف، وكل مرة يزيد 50 ألف تلقائياً
+let nextMilestone = 50000; 
 
 const CORE_DOMAINS = [
   "shopify.com", "stripe.com", "mailchimp.com", "hubspot.com", "zendesk.com", 
@@ -117,7 +117,6 @@ const marketingData = {
   `.trim()
 };
 
-// 📱 دالة إرسال التنبيهات عبر بوت التيليجرام
 async function sendTelegramAlert(message) {
   try {
     await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
@@ -132,10 +131,9 @@ async function dispatchPayload(targetUrl) {
   if (sentRegistry.has(targetUrl) || badDomains.has(targetUrl)) return;
   sentRegistry.add(targetUrl);
 
-  // 🎯 التنبيه المتكرر: كل ما العداد يضرب مضاعفات الـ 50 ألف رسالة
   if (sentRegistry.size >= nextMilestone) {
     const reachedMilestone = nextMilestone;
-    nextMilestone += 50000; // تجهيز الهدف التالي تلقائياً (50k -> 100k -> 150k...)
+    nextMilestone += 50000; 
     
     const alertMsg = `🚀 *إنجاز جديد يا فنان!* \n\nالسيرفر (${SERVER_IDENTITY}) حقق إنجاز وصوله إلى **${reachedMilestone.toLocaleString()} رسالة فريدة** مُرسلة بنجاح!\n🌐 رابط المنصة: ${PLATFORM_URL}`;
     sendTelegramAlert(alertMsg);
@@ -200,11 +198,15 @@ app.listen(PORT, () => {
   console.log(`[🔗 LINK]: ${PLATFORM_URL}`);
   console.log(`======================================================\n`);
 
-  // ✉️ رسالة ترحيب فورية على بوتك الجديد وتليجرامك الشخصي
+  // 🔄 نظام الحفاظ على النشاط (Self-Ping) لمنع نوم السيرفر نهائياً
+  setInterval(() => {
+    axios.get(PLATFORM_URL).catch(() => {});
+  }, 4 * 60 * 1000); // يبعت لنفسه طلب كل 4 دقائق بالضبط
+
   setTimeout(() => {
     if (!welcomeMessageSent) {
       welcomeMessageSent = true;
-      const welcomeMsg = `👋 *أهلاً بك يا فنان Anas!* \n\nتم ربط السيرفر بنجاح بـ بوتك الجديد [t.me/TitanEngineAlerts_bot](https://t.me/TitanEngineAlerts_bot).\n\nالمحرك يعمل الآن بمعدل 3,000 رسالة/ساعة بانتظام تام وبدون أي قيود أو قنوات مزعجة.\n\n🎯 *نظام الإشعارات مفعل:* سيتم إرسال تنبيه فوري لك هنا كلما حقق السيرفر مضاعفات الـ 50,000 رسالة تلقائياً! 🚀🔥`;
+      const welcomeMsg = `👋 *أهلاً بك يا فنان Anas!* \n\nتم تحديث الكود وتفعيل نظام (Self-Ping الذاتي) بنجاح.\n\nالسيرفر الآن سيقوم بإنعاش نفسه تلقائياً كل 4 دقائق ولن ينام أبداً، ليضمن الاستمرار بمعدل 3,000 رسالة/ساعة وصولاً لهدف الـ 50 ألف وأنت حاطط رجل على رجل! 🚀🔥`;
       sendTelegramAlert(welcomeMsg);
     }
     
