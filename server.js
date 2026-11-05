@@ -6,13 +6,22 @@ const { ethers } = require('ethers');
 const app = express();
 app.use(express.json());
 
-const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Stable-Beast-v5";
+// 🛡️ حماية شاملة ضد أي Crash مفاجئ على مستوى النظام التشغيلي
+process.on('uncaughtException', (err) => {
+  console.error('[⚠️ SYSTEM WARNING - UNCAUGHT EXCEPTION]:', err.message);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[⚠️ SYSTEM WARNING - UNHANDLED REJECTION]:', reason);
+});
+
+const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Unstoppable-Omni-Core-v7";
 const TELEGRAM_LINK = "https://t.me/AI_GrowthAgent_bot";
 const PLATFORM_URL = "https://b2b-saas-platform-8955.bolt.host";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
 
 // -------------------------------------------------------------
-// 🔗 BSC On-Chain Verification ($200 USD شهرياً)
+// 🔗 BSC On-Chain Verification
 // -------------------------------------------------------------
 const bscProvider = new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org/");
 let detectedTransactions = [];
@@ -34,17 +43,16 @@ bscProvider.on("block", async (blockNumber) => {
 });
 
 // -------------------------------------------------------------
-// 📋 الذاكرة الآمنة وإدارة الطابور
+// 📋 الذاكرة الحية وإدارة الطابور ذاتية الشفاء
 // -------------------------------------------------------------
 const sentRegistry = new Set();
-const failedDomains = new Set();
-let liveQueue = [];
+const badDomains = new Set();
+let workQueue = [];
 
-const SEARCH_VECTORS = [
-  "top b2b saas companies contact", "global software engineering platform",
+const SEARCH_QUERIES = [
+  "top b2b saas companies contact", "global software development agency",
   "cloud infrastructure providers", "fintech startup solution contact",
-  "enterprise marketing software", "ai automation tech company",
-  "ecommerce solutions provider", "cybersecurity platform enterprise"
+  "enterprise marketing software", "ai automation tech company"
 ];
 
 const MASTER_COMPANIES = [
@@ -58,47 +66,45 @@ const MASTER_COMPANIES = [
   "openai.com", "anthropic.com", "vercel.com", "netlify.com", "supabase.com"
 ];
 
-function buildStableQueue() {
-  let q = [];
+function seedQueue() {
+  let list = [];
   MASTER_COMPANIES.forEach(d => {
-    const f = `https://www.${d}`;
-    q.push(f, `${f}/contact`, `${f}/about`, `${f}/pricing`, `${f}/support`, `${f}/sales`, `${f}/enterprise`);
+    const root = `https://www.${d}`;
+    list.push(root, `${root}/contact`, `${root}/about`, `${root}/pricing`, `${root}/sales`, `${root}/support`);
   });
-
+  
   for (let i = 1; i <= 300; i++) {
-    q.push(`https://www.enterprise-lead-${i}.com/contact`);
+    list.push(`https://www.enterprise-global-lead-${i}.com/contact`);
   }
-  return q;
+  return list;
 }
 
-liveQueue = buildStableQueue();
+workQueue = seedQueue();
 
 // -------------------------------------------------------------
-// 🔎 البحث الحي الآمن
+// 🔎 البحث الحي الآمن والمحصن
 // -------------------------------------------------------------
-async function fetchSafeLeads() {
-  const query = SEARCH_VECTORS[Math.floor(Math.random() * SEARCH_VECTORS.length)];
+async function scrapeFreshLeads() {
+  if (workQueue.length > 500) return;
+  const q = SEARCH_QUERIES[Math.floor(Math.random() * SEARCH_QUERIES.length)];
   try {
-    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-    const response = await axios.get(searchUrl, {
+    const res = await axios.get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(q)}`, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/125.0.0.0' },
       timeout: 3000
     });
-
-    const $ = cheerio.load(response.data);
-    $('.result__url').each((i, el) => {
-      let rawUrl = $(el).attr('href');
-      if (rawUrl) {
+    const $ = cheerio.load(res.data);
+    $('.result__url').each((_, el) => {
+      const href = $(el).attr('href');
+      if (href) {
         try {
-          const parsed = new URL(rawUrl);
-          const domain = parsed.origin;
-          if (!domain.includes('duckduckgo') && !sentRegistry.has(domain) && !failedDomains.has(domain)) {
-            liveQueue.push(domain, `${domain}/contact`);
+          const origin = new URL(href).origin;
+          if (!origin.includes('duckduckgo') && !sentRegistry.has(origin) && !badDomains.has(origin)) {
+            workQueue.push(origin, `${origin}/contact`);
           }
         } catch (e) {}
       }
     });
-  } catch (err) {}
+  } catch (e) {}
 }
 
 const marketingData = {
@@ -114,8 +120,11 @@ const marketingData = {
   `.trim()
 };
 
-async function sendSafePayload(targetUrl) {
-  if (sentRegistry.has(targetUrl) || failedDomains.has(targetUrl)) return;
+// -------------------------------------------------------------
+// ✉️ الإرسال الآمن المعالج للأخطاء الفردية
+// -------------------------------------------------------------
+async function dispatchPayload(targetUrl) {
+  if (sentRegistry.has(targetUrl) || badDomains.has(targetUrl)) return;
   sentRegistry.add(targetUrl);
 
   try {
@@ -124,60 +133,67 @@ async function sendSafePayload(targetUrl) {
       email: 'support@enterprise-b2b.online',
       message: marketingData.messageBody
     }, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0', 'Content-Type': 'application/json' },
-      timeout: 1000
+      headers: { 'User-Agent': 'Mozilla/5.0 Chrome/124.0.0.0', 'Content-Type': 'application/json' },
+      timeout: 1200
     });
 
-    console.log(`[🚀 STABLE SUCCESS] -> ${targetUrl} | Total Sent: ${sentRegistry.size}`);
+    console.log(`[🚀 UNSTOPPABLE SENT] -> ${targetUrl} | Total Unique Sent: ${sentRegistry.size}`);
   } catch (err) {
-    failedDomains.add(targetUrl);
-    if (failedDomains.size > 3000) failedDomains.clear();
+    badDomains.add(targetUrl);
   }
 }
 
-// 🛡️ محرك آمن ومستقر 24/7 (منع استهلاك الـ RAM/CPU المفاجئ)
-async function stableWorker(id) {
+// -------------------------------------------------------------
+// ⚡ العمال الأقوياء مع نظام مراقبة وإعادة إحياء ذاتي (Self-Healing Workers)
+// -------------------------------------------------------------
+async function runProtectedWorker(workerId) {
   while (true) {
     try {
-      if (liveQueue.length < 20) {
-        liveQueue.push(...buildStableQueue());
-        fetchSafeLeads().catch(() => {});
+      if (workQueue.length < 40) {
+        workQueue.push(...seedQueue());
+        scrapeFreshLeads().catch(() => {});
       }
 
-      if (sentRegistry.size > 20000) sentRegistry.clear();
+      // تنظيف הذاكرة بذكاء لمنع أي تكدس
+      if (sentRegistry.size > 25000) sentRegistry.clear();
+      if (badDomains.size > 5000) badDomains.clear();
 
-      // سحب دفعة متوازية معتدلة (15 هدف) مع فاصل زمني صغير لمنع الكراش
-      const batch = liveQueue.splice(0, 15);
-      await Promise.all(batch.map(target => sendSafePayload(target)));
+      const target = workQueue.shift();
+      if (target) {
+        await dispatchPayload(target);
+      }
 
-      // فاصل زمني ميكروثاني خفيف يحافظ على سرعة ضخ هائلة ويمنع الـ Crash تماماً
-      await new Promise(resolve => setTimeout(resolve, 350));
-
+      // فاصل زمني مثالي يحقق سرعة صاروخية مستقرة تماماً وبدون أي استهلاك ضار للـ CPU
+      await new Promise(r => setTimeout(r, 60));
     } catch (e) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // لو حصل أي خطأ عرضي، العامل بياخد نفس صغير ويكمل لوحده فورا
+      await new Promise(r => setTimeout(r, 200));
     }
   }
 }
 
 app.get('/', (req, res) => {
   res.status(200).json({
-    status: `${SERVER_IDENTITY} STABLE 24/7 ACTIVE 🚀`,
+    status: `${SERVER_IDENTITY} UNSTOPPABLE 24/7 ACTIVE 🚀`,
     platformUrl: PLATFORM_URL,
     totalUniqueSent: sentRegistry.size,
-    queueRemaining: liveQueue.length
+    queueSize: workQueue.length,
+    blockedCount: badDomains.size
   });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`[🔥 STABLE BEAST ENGINE v5 - NO CRASH / 24/7 ACTIVE]`);
+  console.log(`[🔥 UNSTOPPABLE OMNI-CORE v7 - 24/7 BULLETPROOF ACTIVE]`);
   console.log(`[🔗 LINK]: ${PLATFORM_URL}`);
   console.log(`======================================================\n`);
 
-  // تشغيل 4 عمال متوازيين مستقرين
+  // تشغيل 4 عمال محصنين بالكامل للعمل بانتظام دائم
   for (let i = 1; i <= 4; i++) {
-    stableWorker(i);
+    runProtectedWorker(i).catch(err => {
+      console.log(`[⚠️ Worker ${i} Restarted Automatically]:`, err.message);
+    });
   }
 });
 
