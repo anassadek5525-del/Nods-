@@ -9,7 +9,8 @@ app.use(express.json());
 const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "ReTarget-Then-Discover-Node";
 
 const TELEGRAM_LINK = "https://t.me/AI_GrowthAgent_bot";
-const PLATFORM_URL = "https://b2b-saas-platform-de-ygze.bolt.host";
+// 🔗 الرابط الجديد المعتمد للمنصة
+const PLATFORM_URL = "https://b2b-saas-platform-8955.bolt.host";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
 
 // -------------------------------------------------------------
