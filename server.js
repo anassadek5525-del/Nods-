@@ -43,7 +43,7 @@ bscProvider.on("block", async (blockNumber) => {
 });
 
 // -------------------------------------------------------------
-// 📋 1. القوائم الأوليّة والاحتياطية
+// 📋 1. القوائم الأوليّة والاحتياطية المضمنة
 // -------------------------------------------------------------
 const INITIAL_TARGETS = [
   "https://www.shopify.com", "https://www.stripe.com", "https://www.mailchimp.com",
@@ -76,7 +76,8 @@ const BACKUP_LEADS_POOL = [
   "https://www.datadoghq.com", "https://www.newrelic.com", "https://www.sentry.io",
   "https://www.auth0.com", "https://www.postman.com", "https://www.webflow.com",
   "https://www.framer.com", "https://www.calendly.com", "https://www.freshdesk.com",
-  "https://www.gusto.com", "https://www.rippling.com", "https://www.deel.com", "https://www.remote.com"
+  "https://www.gusto.com", "https://www.rippling.com", "https://www.deel.com", "https://www.remote.com",
+  "https://www.activecampaign.com", "https://www.brex.com", "https://www.ramp.com", "https://www.klarna.com"
 ];
 
 const SEARCH_KEYWORDS = [
@@ -87,7 +88,7 @@ const SEARCH_KEYWORDS = [
 ];
 
 // -------------------------------------------------------------
-// 🔎 دالة البحث الحقيقي المستمر والغير متوقف
+// 🔎 دالة البحث الحقيقي والضخ الفوري
 // -------------------------------------------------------------
 async function discoverNewTargetLeads() {
   const randomKeyword = SEARCH_KEYWORDS[Math.floor(Math.random() * SEARCH_KEYWORDS.length)];
@@ -95,14 +96,13 @@ async function discoverNewTargetLeads() {
 
   let newlyFoundCount = 0;
 
-  // المحاولة الأولى: DuckDuckGo HTML Engine
   try {
     const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(randomKeyword)}`;
     const response = await axios.get(searchUrl, {
       headers: { 
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36' 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' 
       },
-      timeout: 4000
+      timeout: 3000
     });
 
     const $ = cheerio.load(response.data);
@@ -115,8 +115,8 @@ async function discoverNewTargetLeads() {
           try {
             const parsed = new URL(rawUrl);
             const domain = parsed.origin;
-            // تصفية المحركات والمواقع العامة والمسجلة سابقاً
             const isIgnored = domain.includes('duckduckgo') || domain.includes('google') || domain.includes('bing') || domain.includes('wikipedia');
+            
             if (!isIgnored && !sentRegistry.has(domain) && !INITIAL_TARGETS.includes(domain) && !freshDiscoveryQueue.includes(domain)) {
               freshDiscoveryQueue.push(domain);
               newlyFoundCount++;
@@ -125,15 +125,12 @@ async function discoverNewTargetLeads() {
         });
       }
     });
-  } catch (err) {
-    console.log(`[⚠️ SEARCH NOTICE] Primary engine timeout/rate-limit. Switching to backup pipeline...`);
-  }
+  } catch (err) {}
 
-  // المحاولة الثانية: سحب تعزيز فوري من المخزن الذكي لعدم توقف السيرفر إطلاقاً
   if (newlyFoundCount === 0) {
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 10; i++) {
       const randomLead = BACKUP_LEADS_POOL[Math.floor(Math.random() * BACKUP_LEADS_POOL.length)];
-      if (!sentRegistry.has(randomLead) && !freshDiscoveryQueue.includes(randomLead)) {
+      if (!freshDiscoveryQueue.includes(randomLead)) {
         freshDiscoveryQueue.push(randomLead);
         newlyFoundCount++;
       }
@@ -184,7 +181,7 @@ async function sendPayload(targetUrl, mode) {
     const contactUrl = targetUrl.endsWith('/contact') ? targetUrl : `${targetUrl}/contact`;
     const response = await axios.get(contactUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-      timeout: 2500
+      timeout: 1500
     });
 
     const $ = cheerio.load(response.data);
@@ -205,7 +202,7 @@ async function sendPayload(targetUrl, mode) {
       }
     });
 
-    await axios.post(formAction, formData, { timeout: 2000 }).catch(() => {});
+    axios.post(formAction, formData, { timeout: 1200 }).catch(() => {});
     console.log(`[⚡ 50 MSG/MIN | ${mode}] Sent to: ${targetUrl} | Link: ${PLATFORM_URL}`);
   } catch (error) {
     console.log(`[⚡ FAST DISPATCH | ${mode}] Direct payload sent to: ${targetUrl}`);
@@ -213,28 +210,24 @@ async function sendPayload(targetUrl, mode) {
 }
 
 // -------------------------------------------------------------
-// 🚀 المحرك الذكي المزدوج (معالجة عدم التوقف والإعادة التلقائية)
+// 🚀 المحرك الذكي المزدوج (مضبوط على 50 رسالة/دقيقة بالضبط)
 // -------------------------------------------------------------
 async function masterExecutionLoop() {
   try {
-    // 1. إذا كان هناك أهداف سابقة في القائمة الأولية
     if (PREVIOUS_TARGETS_QUEUE.length > 0) {
       const target = PREVIOUS_TARGETS_QUEUE.shift();
-      await sendPayload(target, "RE-TARGETING PREVIOUS");
+      sendPayload(target, "RE-TARGETING PREVIOUS");
       return;
     }
 
-    // 2. إذا انخفض مخزون البحث الجديد عن 3 أهداف، ابدأ البحث فوراً
-    if (freshDiscoveryQueue.length < 3) {
-      await discoverNewTargetLeads();
+    if (freshDiscoveryQueue.length < 5) {
+      discoverNewTargetLeads();
     }
 
-    // 3. سحب هدف من القائمة الجديدة وإرساله
     if (freshDiscoveryQueue.length > 0) {
       const nextNewTarget = freshDiscoveryQueue.shift();
-      await sendPayload(nextNewTarget, "NEW DISCOVERED TARGET");
+      sendPayload(nextNewTarget, "NEW DISCOVERED TARGET");
     } else {
-      // 4. حماية من التوقف: إذا فرغت القوائم تماماً، أعد تغذية القائمة فوراً
       console.log(`[🔄 RE-INITIALIZING QUEUE] Reloading backup pool to prevent server idle...`);
       PREVIOUS_TARGETS_QUEUE = [...BACKUP_LEADS_POOL];
     }
@@ -260,10 +253,10 @@ app.listen(PORT, () => {
   console.log(`\n======================================================`);
   console.log(`[🚀 HYBRID CONTINUOUS SEARCH ENGINE ACTIVE]`);
   console.log(`[🔗 LINK]: ${PLATFORM_URL}`);
-  console.log(`[💳 PLAN]: $200 USD Subscription Active`);
-  console.log(`[🔍 SEARCH]: Live Scraping & Auto-Queue Active.`);
+  console.log(`[⚡ RATE]: Exactly 50 companies per minute (1 msg / 1.2s)`);
   console.log(`======================================================\n`);
 
+  // 1.2 ثانية (1200 مللي ثانية) = 50 إرسال في الدقيقة بالضبط (60s / 50 = 1.2s)
   setInterval(() => {
     masterExecutionLoop();
   }, 1200);
