@@ -9,7 +9,7 @@ app.use(express.json());
 process.on('uncaughtException', () => {});
 process.on('unhandledRejection', () => {});
 
-const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Titan-Engine-RateLimited";
+const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Titan-Engine-HealthSafe";
 const TELEGRAM_LINK = "https://t.me/AI_GrowthAgent_bot";
 const PLATFORM_URL = "https://b2b-saas-platform-8955.bolt.host";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
@@ -37,7 +37,7 @@ bscProvider.on("block", async (blockNumber) => {
 });
 
 // -------------------------------------------------------------
-// 📋 إدارة الذاكرة الخفيفة (Low-RAM Footprint)
+// 📋 الذاكرة الخفيفة جداً (Low-RAM Footprint)
 // -------------------------------------------------------------
 const sentRegistry = new Set();
 const badDomains = new Set();
@@ -57,7 +57,6 @@ const CORE_DOMAINS = [
 const PREFIXES = ["get", "use", "try", "go", "app", "cloud", "tech", "dev", "ai", "data"];
 const SUFFIXES = ["io", "co", "ai", "tech", "app", "cloud", "dev", "labs", "hq", "net"];
 
-// توليد خفيف ومحدد لحماية الـ RAM
 function refillQueueControlled() {
   let list = [];
   CORE_DOMAINS.forEach(d => {
@@ -129,8 +128,8 @@ async function dispatchPayload(targetUrl) {
       timeout: 1500
     }).catch(() => {});
 
-    if (sentRegistry.size % 50 === 0) {
-      console.log(`[🚀 RATE-CONTROLLED SENT] -> Total Sent: ${sentRegistry.size} | Target Rate: 3,000/hr`);
+    if (sentRegistry.size % 25 === 0) {
+      console.log(`[🚀 HEALTH-SAFE SENT] -> Total Sent: ${sentRegistry.size} | Rate: ~3,000/hr`);
     }
   } catch (err) {
     badDomains.add(targetUrl);
@@ -138,26 +137,25 @@ async function dispatchPayload(targetUrl) {
 }
 
 // -------------------------------------------------------------
-// ⚡ Worker Loop محدد المعدل (3,000/الساعة بالضبط)
+// ⚡ Worker Loop غير متزامن وموزع لمنع تعليق الخادم
 // -------------------------------------------------------------
-async function runTargetedRateWorker(workerId) {
+async function runHealthSafeWorker() {
   while (true) {
     try {
       if (workQueue.length < 20) {
         workQueue.push(...refillQueueControlled());
-        scrapeLiveWebLeads().catch(() => {});
+        setImmediate(() => scrapeLiveWebLeads().catch(() => {}));
       }
 
-      // تنظيف الذاكرة للحفاظ على استهلاك الـ RAM منخفضاً دائماً
-      if (sentRegistry.size > 5000) sentRegistry.clear();
-      if (badDomains.size > 2000) badDomains.clear();
+      if (sentRegistry.size > 3000) sentRegistry.clear();
+      if (badDomains.size > 1000) badDomains.clear();
 
       const target = workQueue.shift();
       if (target) {
         await dispatchPayload(target);
       }
 
-      // فاصل زمني 2,400 ملي ثانية لكل عامل (عاملين = رسالة كل 1,200 ملي ثانية = 3,000 رسالة/ساعة)
+      // فاصل زمني 2,400 ملي ثانية (عاملين = 3,000 رسالة/ساعة بدقة)
       await new Promise(r => setTimeout(r, 2400));
     } catch (e) {
       await new Promise(r => setTimeout(r, 1000));
@@ -165,9 +163,10 @@ async function runTargetedRateWorker(workerId) {
   }
 }
 
+// مسار رئيسي فائق السرعة يضمن استجابة فورية لأي فحص صحي من المنصة
 app.get('/', (req, res) => {
   res.status(200).json({
-    status: `${SERVER_IDENTITY} ONLINE 🚀`,
+    status: `${SERVER_IDENTITY} HEALTHY & RUNNING 🚀`,
     platformUrl: PLATFORM_URL,
     totalUniqueSent: sentRegistry.size,
     queueRemaining: workQueue.length,
@@ -178,14 +177,15 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`[🔥 TITAN-ENGINE - STABLE 3,000 MSG/HR PER SERVER ACTIVE]`);
+  console.log(`[🔥 TITAN-ENGINE - HEALTH-SAFE 3,000 MSG/HR ACTIVE]`);
   console.log(`[🔗 LINK]: ${PLATFORM_URL}`);
   console.log(`======================================================\n`);
 
-  // تشغيل عاملين اثنين فقط لتحقيق المعدل المطلوب بدقة وبدون استهلاك للذاكرة
-  for (let i = 1; i <= 2; i++) {
-    runTargetedRateWorker(i);
-  }
+  // تشغيل العاملين في الخلفية غير المتزامنة (Non-Blocking)
+  setTimeout(() => {
+    runHealthSafeWorker();
+    runHealthSafeWorker();
+  }, 1000);
 });
 
 module.exports = app;
