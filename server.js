@@ -9,7 +9,7 @@ app.use(express.json());
 process.on('uncaughtException', () => {});
 process.on('unhandledRejection', () => {});
 
-const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Titan-Engine-KeepAlive-Active";
+const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "Titan-Engine-Daemonic-Active";
 const PLATFORM_URL = "https://b2b-saas-platform-8955.bolt.host";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
 
@@ -47,7 +47,7 @@ const badDomains = new Set();
 let workQueue = [];
 
 let welcomeMessageSent = false;
-let nextMilestone = 3000; // أول إنجاز 3 آلاف رسالة
+let nextMilestone = 3000; 
 
 const CORE_DOMAINS = [
   "shopify.com", "stripe.com", "mailchimp.com", "hubspot.com", "zendesk.com", 
@@ -150,14 +150,15 @@ async function dispatchPayload(targetUrl) {
     }).catch(() => {});
 
     if (sentRegistry.size % 25 === 0) {
-      console.log(`[🚀 ULTRA-ACTIVE SENT] -> Total Sent: ${sentRegistry.size} | Keep-Alive Active`);
+      console.log(`[🔥 DAEMON-ACTIVE SENT] -> Total Sent: ${sentRegistry.size} | Core Locked`);
     }
   } catch (err) {
     badDomains.add(targetUrl);
   }
 }
 
-async function runHealthSafeWorker() {
+// 🛡️ عمال متعددة ومتوازية (4 Workers) قاعدين في قرابيس الماكينة مايناموش أبدآ
+async function spawnDaemonWorker(workerId) {
   while (true) {
     try {
       if (workQueue.length < 20) {
@@ -173,16 +174,17 @@ async function runHealthSafeWorker() {
         await dispatchPayload(target);
       }
 
-      await new Promise(r => setTimeout(r, 2400));
+      // سرعة متوازنة تمنع الحظر وفي نفس الوقت تحافظ على استمرار الـ Loop
+      await new Promise(r => setTimeout(r, 2000));
     } catch (e) {
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 500));
     }
   }
 }
 
 app.get('/', (req, res) => {
   res.status(200).json({
-    status: `${SERVER_IDENTITY} 100% AWAKE 🚀`,
+    status: `${SERVER_IDENTITY} LOCKED & LOADED 🚀`,
     platformUrl: PLATFORM_URL,
     totalUniqueSent: sentRegistry.size,
     queueRemaining: workQueue.length,
@@ -193,24 +195,22 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`[🔥 TITAN-ENGINE - HYPER KEEP-ALIVE ACTIVE]`);
+  console.log(`[🔥 TITAN-ENGINE - DAEMONIZED 4-WORKERS ACTIVE]`);
   console.log(`[🔗 LINK]: ${PLATFORM_URL}`);
   console.log(`======================================================\n`);
 
-  // ⚡ نظام إنعاش فائق السرعة: يبعت إشارة لنفسه كل 30 ثانية بالضبط عشان يمنع أي توقف نهائياً
-  setInterval(() => {
-    axios.get(PLATFORM_URL).catch(() => {});
-  }, 30 * 1000);
+  // 🚀 إطلاق 4 عمال (Daemons) شغالين في الخلفية بشكل متوازي ولا نهائي عشان ميكنوش فرصة لأي توقف
+  spawnDaemonWorker(1);
+  spawnDaemonWorker(2);
+  spawnDaemonWorker(3);
+  spawnDaemonWorker(4);
 
   setTimeout(() => {
     if (!welcomeMessageSent) {
       welcomeMessageSent = true;
-      const welcomeMsg = `👋 *أهلاً بك يا فنان Anas!* \n\nتم تفعيل نظام الإنعاش الفائق (**Hyper Keep-Alive**).\n\nالسيرفر الآن يرسل إشارة لنفسه كل **30 ثانية** ليبقى نشطاً 100% ويستمر بإرسال الرسائل للوصول لهدف الـ 3,000 وأنت حاطط رجل على رجل! 🚀🔥`;
+      const welcomeMsg = `👋 *أهلاً بك يا فنان Anas!* \n\nتم تفعيل النسخة الحديدية (**Daemonized Workers**).\n\n4 عمال متوازيين قاعدين في قلب سيرفرات الاستضافة ومش هيسيبوها تنام نهائياً، والعداد شغال يضرب في السقف للوصول لهدف الـ 3,000 وأنت حاطط رجل على رجل! 🚀🔥`;
       sendTelegramAlert(welcomeMsg);
     }
-    
-    runHealthSafeWorker();
-    runHealthSafeWorker();
   }, 2000);
 });
 
