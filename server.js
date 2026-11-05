@@ -9,12 +9,11 @@ app.use(express.json());
 const SERVER_IDENTITY = process.env.SERVER_IDENTITY || "ReTarget-Then-Discover-Node";
 
 const TELEGRAM_LINK = "https://t.me/AI_GrowthAgent_bot";
-// الرابط الجديد المحدث للمنصة
 const PLATFORM_URL = "https://b2b-saas-platform-de-ygze.bolt.host";
 const MY_WALLET = "0x9426A467E0fFF34981656bd98580f60CFE395364";
 
 // -------------------------------------------------------------
-// 🔗 BSC On-Chain Verification (اشتراك بقيمة 200$ شهرياً)
+// 🔗 BSC On-Chain Verification ($200 USD شهرياً)
 // -------------------------------------------------------------
 const bscProvider = new ethers.JsonRpcProvider("https://bsc-dataseed.binance.org/");
 let detectedTransactions = [];
@@ -27,7 +26,6 @@ bscProvider.on("block", async (blockNumber) => {
     for (const tx of block.prefetchedTransactions) {
       if (tx.to && tx.to.toLowerCase() === MY_WALLET.toLowerCase()) {
         const valInBnb = parseFloat(ethers.formatEther(tx.value));
-        // حساب القيمة بالدولار بناءً على السعر الحالي للـ BNB (تقريباً 700$ للـ BNB الواحد لتغطية 200$)
         const estimatedBnbPrice = 700; 
         const valInUSD = valInBnb * estimatedBnbPrice;
 
@@ -46,7 +44,7 @@ bscProvider.on("block", async (blockNumber) => {
 });
 
 // -------------------------------------------------------------
-// 📋 1. قائمة الشركات القديمة (إعادة تعيين وبدء الإرسال من جديد بالرابط الجديد)
+// 📋 1. القائمة الأساسية
 // -------------------------------------------------------------
 const INITIAL_TARGETS = [
   "https://www.shopify.com", "https://www.stripe.com", "https://www.mailchimp.com",
@@ -69,43 +67,79 @@ let PREVIOUS_TARGETS_QUEUE = [...INITIAL_TARGETS];
 const sentRegistry = new Set();
 let freshDiscoveryQueue = [];
 
+// قائمة احتياطية ضخمة لضمان تدفق الأهداف دائماً
+const BACKUP_LEADS_POOL = [
+  "https://www.salesforce.com", "https://www.adobe.com", "https://www.atlassian.com",
+  "https://www.tableau.com", "https://www.monday.com", "https://www.airtable.com",
+  "https://www.clickup.com", "https://www.pipedrive.com", "https://www.kavak.com",
+  "https://www.revolut.com", "https://www.wise.com", "https://www.checkout.com",
+  "https://www.databricks.com", "https://www.snowflake.com", "https://www.mongodb.com",
+  "https://www.elastic.co", "https://www.hashicorp.com", "https://www.pagerduty.com",
+  "https://www.datadoghq.com", "https://www.newrelic.com", "https://www.sentry.io",
+  "https://www.auth0.com", "https://www.postman.com", "https://www.webflow.com",
+  "https://www.framer.com", "https://www.calendly.com", "https://www.freshdesk.com",
+  "https://www.gusto.com", "https://www.rippling.com", "https://www.deel.com", "https://www.remote.com"
+];
+
 const SEARCH_KEYWORDS = [
   "b2b saas platform", "logistics software company", "fintech startup contact",
   "ecommerce solution provider", "marketing automation tools", "enterprise software vendor",
   "ai business solutions", "cloud infrastructure providers"
 ];
 
+// -------------------------------------------------------------
+// 🔎 دالة البحث الذاتي التلقائي + التغذية المستمرة
+// -------------------------------------------------------------
 async function discoverNewTargetLeads() {
   const randomKeyword = SEARCH_KEYWORDS[Math.floor(Math.random() * SEARCH_KEYWORDS.length)];
   console.log(`[🔎 AUTO-DISCOVERY ACTIVE] Searching web for new unseen leads: "${randomKeyword}"...`);
 
+  let newlyFoundCount = 0;
+
+  // المحاولة الأولى: البحث في محركات الويب المفتوحة واستخراج الدومينات تلقائياً
   try {
     const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(randomKeyword)}`;
     const response = await axios.get(searchUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+      headers: { 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' 
+      },
       timeout: 3000
     });
 
     const $ = cheerio.load(response.data);
-    $('.result__url').each((i, el) => {
-      let rawUrl = $(el).text().trim();
-      if (rawUrl) {
-        if (!rawUrl.startsWith('http')) rawUrl = `https://${rawUrl}`;
-        try {
-          const domain = new URL(rawUrl).origin;
-          if (!sentRegistry.has(domain) && !INITIAL_TARGETS.includes(domain) && !freshDiscoveryQueue.includes(domain)) {
-            freshDiscoveryQueue.push(domain);
-          }
-        } catch (e) {}
+    $('.result__url, .result__snippet').each((i, el) => {
+      let rawText = $(el).text().trim();
+      let match = rawText.match(/https?:\/\/[^\s/$.?#].[^\s]*/gi);
+      if (match) {
+        match.forEach(rawUrl => {
+          try {
+            const domain = new URL(rawUrl).origin;
+            if (!sentRegistry.has(domain) && !INITIAL_TARGETS.includes(domain) && !freshDiscoveryQueue.includes(domain)) {
+              freshDiscoveryQueue.push(domain);
+              newlyFoundCount++;
+            }
+          } catch (e) {}
+        });
       }
     });
-
-    console.log(`[✨ FRESH LEADS FOUND] Added ${freshDiscoveryQueue.length} new unique companies to queue.`);
   } catch (err) {}
+
+  // المحاولة الثانية: إذا لم يجد البحث أهدافاً جديدة (0)، يتم سحب وجبة تلقائية فورية من المخزن الذكي
+  if (newlyFoundCount === 0) {
+    for (let i = 0; i < 5; i++) {
+      const randomLead = BACKUP_LEADS_POOL[Math.floor(Math.random() * BACKUP_LEADS_POOL.length)];
+      if (!sentRegistry.has(randomLead) && !freshDiscoveryQueue.includes(randomLead)) {
+        freshDiscoveryQueue.push(randomLead);
+        newlyFoundCount++;
+      }
+    }
+  }
+
+  console.log(`[✨ FRESH LEADS FOUND] Added ${newlyFoundCount} new unique companies to queue.`);
 }
 
 // -------------------------------------------------------------
-// ✉️ الرسالة التسويقية المحدثة ($200 USD شهرياً + الرابط الجديد)
+// ✉️ الرسالة التسويقية
 // -------------------------------------------------------------
 function getMagneticMarketingMessage(companyName) {
   return {
@@ -209,9 +243,9 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n======================================================`);
   console.log(`[🚀 HYBRID RE-TARGET & AUTO-DISCOVERY ENGINE ACTIVE]`);
-  console.log(`[🔗 NEW LINK]: ${PLATFORM_URL}`);
+  console.log(`[🔗 LINK]: ${PLATFORM_URL}`);
   console.log(`[💳 PLAN]: $200 USD Subscription Active`);
-  console.log(`[🎯 STEP 1]: Re-targeting ${PREVIOUS_TARGETS_QUEUE.length} previous companies with NEW URL.`);
+  console.log(`[🔍 SEARCH]: Autonomous Search & Auto-Queue Active.`);
   console.log(`======================================================\n`);
 
   setInterval(() => {
